@@ -31,9 +31,8 @@ class SimpleBaselineVQA(pl.LightningModule):
         self.criterion = nn.NLLLoss()
         self.log = CometLogger( 
                     save_dir="logs/",
-                    workspace=os.environ["COMET_WORKSPACE"],  # TODO - make a script to set these env vars
+                    workspace="vqa",
                     project_name="simple_baseline_vqa_by_fb", 
-                    rest_api_key=os.environ["COMET_REST_KEY"], 
                     experiment_name="simple_baseline_vqa_{}".format(datetime.now().strftime("%b_%d_%H_%M_%S")) 
                 )
 
