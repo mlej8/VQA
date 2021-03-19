@@ -6,11 +6,12 @@ import pytorch_lightning as pl
 from pytorch_lightning.logging import CometLogger
 from pytorch_lightning.utilities import seed_everything
 
-
 from pretrained import initialize_model
 from datetime import datetime
 
 from utils import weights_init
+
+from simple_baseline_vqa_params import *
 
 # setting the seed for reproducability (it is important to set seed when using DPP mode)
 seed_everything(7)
@@ -39,7 +40,6 @@ class SimpleBaselineVQA(pl.LightningModule):
         # initialize parameters for fc layers
         weights_init(fc2)
         weights_init(fc_questions)
-        
 
     def forward(self, image, question_encodings):
         """ 
@@ -88,6 +88,6 @@ class SimpleBaselineVQA(pl.LightningModule):
         """
 
         # creating optimizer for our model
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=lr)
 
         return optimizer

@@ -25,5 +25,6 @@ maxweightnorm = 2000
 # parameters for different learning rates for different layers
 lr_wordembed = 0.8
 lr_other = 0.01
+lr = 1e-3
 weightClip_wordembed = 1500
 weightClip_other = 20
