@@ -24,7 +24,7 @@ class SimpleBaselineVQA(pl.LightningModule):
         super(SimpleBaselineVQA, self).__init__()
         
         # the output size of Imagenet is 1000 and we want to resize it to 1024
-        self.googlenet = initialize_model("googlenet", 1024, False, use_pretrained=True) # TODO question: are we feature extracting or finetuning ? we can try both.. 
+        self.googlenet = initialize_model("googlenet", 1024, True, use_pretrained=True) # TODO question: are we feature extracting or finetuning ? we can try both.. 
         self.fc_questions = nn.Linear(num_questions, 1024)
         self.fc2 = nn.Linear(2048, num_answers)
         
