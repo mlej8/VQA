@@ -136,3 +136,20 @@ def get_transform(target_size, central_fraction=1.0):
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225]),
     ])
+
+def weights_init(layer):
+    """ Initialize weights using Xavier uniform """
+    if isinstance(layer, torch.nn.Conv2d):
+        torch.nn.init.xavier_uniform_(layer.weight.data)
+        if layer.bias is not None:
+            torch.nn.init.zeros_(layer.bias.data)
+
+    if isinstance(layer, torch.nn.Linear):
+        torch.nn.init.xavier_uniform_(layer.weight.data)
+        if layer.bias is not None:
+            torch.nn.init.zeros_(layer.bias.data)
+
+    if isinstance(layer, torch.nn.ConvTranspose2d):
+        torch.nn.init.xavier_uniform_(layer.weight.data)
+        if layer.bias is not None:
+            torch.nn.init.zeros_(layer.bias.data)
