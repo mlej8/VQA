@@ -11,6 +11,7 @@ The official instructions to download the datasets and preprocessing tasks for t
 Add conda-forge to channels: `conda config --add channels conda-forge`
 
 To create an environment using requirements.txt use: `conda create --name vqa --file requirements.txt`
+
 Activate environment: `conda activate vqa`
 
 To update requirements file: `conda list -e > requirements.txt`
