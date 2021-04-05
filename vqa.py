@@ -1,5 +1,5 @@
 import torch
-from torch.utils.data import Dataset
+from torch.utils.data import DataLoader, Dataset
 import torchvision.transforms as transforms
 
 from skimage import io
@@ -11,22 +11,23 @@ import datetime
 import copy
 import logging
 
+from config import *
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class VQA(Dataset):
-	def __init__(self, annotation_file: str, question_file: str, data_subtype: str, img_dir: str, transform=None):
+	def __init__(self, annotation_file: str, question_file: str, img_dir: str, transform=None):
 		"""
 		Create the VQA Dataset
 
 		:param annotation_file: location of VQA annotation file
 		:param question_file: location of VQA question file
-		:param data_subtype: can only be 'train2014', 'val2014' or 'test2014'
 		:param img_dir: directory containing all images
 		:param transform: optional transform to be applied on an image sample.
 		"""
-		self.data_subtype = data_subtype
-		self.transform = transform
+		# TODO find captions for MSCOCO
+		# TODO group questions by answer_type
 		
 		# answer vocabulary
 		self.ans_vocab = {}
@@ -41,7 +42,7 @@ class VQA(Dataset):
 		self.questions = json.load(open(question_file, 'r'))
 		logger.info("Done in {}".format(datetime.datetime.utcnow() - time_t))
 			
-		# dictionary mapping question id to the question annotation
+		# dictionary mapping question id to the annotation
 		self.question_annotation = {annotation['question_id']: [] for annotation in self.annotations['annotations']}
 		
 		# dictionary mapping question id to question
@@ -53,10 +54,23 @@ class VQA(Dataset):
 		# create index
 		self.create_index()
 
-		# store an array of image ids for indexing
-		self.q_ids = self.questions_id.keys()
+		# store an array of question ids for indexing
+		self.q_ids = list(self.questions_id.keys())
 
-		# TODO group questions by answer_type
+		self.data_subtype = self.questions["data_subtype"]
+		self.task_type = self.questions["task_type"]
+		self.data_type = self.questions["data_type"]
+		self.transform = transform
+		self.img_dir = img_dir
+
+		logger.info("Annotation file: %s", annotation_file)
+		logger.info("Question file: %s", question_file)
+		logger.info("Data type: %s", self.data_type)
+		logger.info("Data subtype: %s", self.data_subtype)
+		logger.info("Image directory: %s", img_dir)
+		logger.info("Task type: %s", self.task_type)
+		if transform:
+			logger.info("Transform: %s", transform)
 
 	def create_index(self):
 		# create index
@@ -74,7 +88,7 @@ class VQA(Dataset):
 
 	def __getitem__(self, index):
 		""" 
-		Eaach sample consist of (question, image, answer).
+		Each sample consist of (question, image, answer).
 		"""
 		q_id = self.q_ids[index]
 		annotation = self.question_annotation[q_id]
@@ -86,26 +100,46 @@ class VQA(Dataset):
 
 		# read image from disk
 		if os.path.isfile(img_path):
-			image = io.imread(img_path)
+			image = self.preprocess_image(img_path)
 		else:
 			logger.error(f"{img_path} is not a valid file.")
+			exit(1)
 
+		# get the question
+		question = self.questions_id[q_id]["question"]
+		question_type = annotation["question_type"]
+
+		# get the question's answers 
+		answer_type = annotation["answer_type"]
+		answers = annotation["answers"]
+		multiple_choice_answer = annotation["multiple_choice_answer"]
+
+		question = self.preprocess_question(question)
+		answer = self.preprocess_answer(multiple_choice_answer)
+
+		# TODO process answer depending on answer type? # if annotation["answer_type"] == "number": # elif annotation["answer_type"] == "yes/no": # elif annotation["answer_type"] == "other":
+
+		return (question, image, multiple_choice_answer)
+
+	def preprocess_image(self, img_path):
+		""" Helper method to preprocess an image """
+		
+		image = io.imread(img_path)
 		# apply transformation on the image
 		if self.transform:
 			image = self.transform(image)
-
-		# get the question 
-		question = annotation[q_id]
 		
-		# TODO answer depending on answer type
-		# if annotation["answer_type"] == "number":
-		# elif annotation["answer_type"] == "yes/no":
-		# elif annotation["answer_type"] == "other":
-		# most frequent ground truth answer
-		most_freq_ans = annotation["multiple_choice_answer"]
-		answers = annotation["answers"]
+		return image
 
-		return (question, image, most_freq_ans, answers)
+	def preprocess_question(self, question):
+		""" Helper method to preprocess a question """
+		# TODO
+		return question
+
+	def preprocess_answer(self, answer):
+		""" Helper method to preprocess an answer """
+		# TODO
+		return answer
 
 	def info(self):
 		"""
