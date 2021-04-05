@@ -13,10 +13,8 @@ Add conda-forge to channels: `conda config --add channels conda-forge`
 To create an environment using requirements.txt use: `conda create --name vqa --file requirements.txt`
 Activate environment: `conda activate vqa`
 
-
 To update requirements file: `conda list -e > requirements.txt`
-
 ## Credits
-The Python Helper and Evaluation tools comes from the following repository: https://github.com/GT-Vision-Lab/VQA
+The PythonHelperTools, PythonEvaluationTools, QuestionTypes and Results comes from the following repository: https://github.com/GT-Vision-Lab/VQA
 
 

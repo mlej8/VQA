@@ -29,7 +29,7 @@ resultType, fileType) for fileType in fileTypes]
 
 # create vqa object and vqaRes object
 vqa = VQA(annFile, quesFile)
-vqaRes = vqa.loadRes(resFile, quesFile)
+vqaRes = vqa.load_result(resFile, quesFile)
 
 # create vqaEval object by taking vqa and vqaRes
 vqaEval = VQAEval(vqa, vqaRes, n=2)   #n is precision of accuracy (number of places after decimal), default is 2
@@ -57,12 +57,12 @@ evals = [quesId for quesId in vqaEval.evalQA if vqaEval.evalQA[quesId]<35]   #35
 if len(evals) > 0:
 	print 'ground truth answers'
 	randomEval = random.choice(evals)
-	randomAnn = vqa.loadQA(randomEval)
-	vqa.showQA(randomAnn)
+	randomAnn = vqa.load_questions_and_answers(randomEval)
+	vqa.show_questions_and_answers(randomAnn)
 
 	print '\n'
 	print 'generated answer (accuracy %.02f)'%(vqaEval.evalQA[randomEval])
-	ann = vqaRes.loadQA(randomEval)[0]
+	ann = vqaRes.load_questions_and_answers(randomEval)[0]
 	print "Answer:   %s\n" %(ann['answer'])
 
 	imgId = randomAnn[0]['image_id']

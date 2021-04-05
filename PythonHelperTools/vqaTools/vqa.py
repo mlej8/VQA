@@ -8,11 +8,11 @@ __version__ = '0.9'
 
 # The following functions are defined:
 #  VQA        - VQA class that loads VQA annotation file and prepares data structures.
-#  getQuesIds - Get question ids that satisfy given filter conditions.
-#  getImgIds  - Get image ids that satisfy given filter conditions.
-#  loadQA     - Load questions and answers with the specified question ids.
-#  showQA     - Display the specified questions and answers.
-#  loadRes    - Load result file and create result object.
+#  get_question_ids - Get question ids that satisfy given filter conditions.
+#  get_img_ids  - Get image ids that satisfy given filter conditions.
+#  load_questions_and_answers     - Load questions and answers with the specified question ids.
+#  show_questions_and_answers     - Display the specified questions and answers.
+#  load_result    - Load result file and create result object.
 
 # Help on each function can be accessed by: "help(COCO.function)"
 
@@ -69,7 +69,7 @@ class VQA:
 		for key, value in self.datset['info'].items():
 			print('%s: %s'%(key, value))
 
-	def getQuesIds(self, imgIds=[], quesTypes=[], ansTypes=[]):
+	def get_question_ids(self, imgIds=[], quesTypes=[], ansTypes=[]):
 		"""
 		Get question ids that satisfy given filter conditions. default skips that filter
 		:param 	imgIds    (int array)   : get question ids for given imgs
@@ -93,7 +93,7 @@ class VQA:
 		ids = [ann['question_id'] for ann in anns]
 		return ids
 
-	def getImgIds(self, quesIds=[], quesTypes=[], ansTypes=[]):
+	def get_img_ids(self, quesIds=[], quesTypes=[], ansTypes=[]):
 		"""
 		Get image ids that satisfy given filter conditions. default skips that filter
 		:param quesIds   (int array)   : get image ids for given question ids
@@ -117,7 +117,7 @@ class VQA:
 		ids = [ann['image_id'] for ann in anns]
 		return ids
 
-	def loadQA(self, ids=[]):
+	def load_questions_and_answers(self, ids=[]):
 		"""
 		Load questions and answers with the specified question ids.
 		:param ids (int array)       : integer ids specifying question ids
@@ -128,7 +128,7 @@ class VQA:
 		elif type(ids) == int:
 			return [self.qa[ids]]
 
-	def showQA(self, anns):
+	def show_questions_and_answers(self, anns):
 		"""
 		Display the specified annotations.
 		:param anns (array of object): annotations to display
@@ -142,7 +142,7 @@ class VQA:
 			for ans in ann['answers']:
 				print("Answer %d: %s" %(ans['answer_id'], ans['answer']))
 		
-	def loadRes(self, resFile, quesFile):
+	def load_result(self, resFile, quesFile):
 		"""
 		Load result file and return a result object.
 		:param   resFile (str)     : file name of result file
@@ -161,7 +161,7 @@ class VQA:
 		anns    = json.load(open(resFile))
 		assert type(anns) == list, 'results is not an array of objects'
 		annsQuesIds = [ann['question_id'] for ann in anns]
-		assert set(annsQuesIds) == set(self.getQuesIds()), \
+		assert set(annsQuesIds) == set(self.get_question_ids()), \
 		'Results do not correspond to current VQA set. Either the results do not have predictions for all question ids in annotation file or there is atleast one question id that does not belong to the question ids in the annotation file.'
 		for ann in anns:
 			quesId 			     = ann['question_id']
