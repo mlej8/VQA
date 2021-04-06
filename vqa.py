@@ -3,9 +3,9 @@ from torch.utils.data import DataLoader, Dataset
 import torchvision.transforms as transforms
 
 from skimage import io
-
+import numpy as np
 import os
-
+from sklearn.preprocessing import OneHotEncoder
 import json
 import datetime
 import copy
@@ -135,15 +135,32 @@ class VQA(Dataset):
 		
 		return image
 
-	def preprocess_question(self, question):
-		""" Helper method to preprocess a question """
-		# TODO
-		return question
+	def preprocess_question(self, question, vocab):
+		""" 
+		param: question (String): question string
+				vocab (dict): vocabulary
+		return: question in one-hot vector 
+		"""
+		one_hot = [0] * len(vocab)
+		for token in self.tokenize(question):
+			for key in token:
+				if key in vocab:
+					one_hot[vocab[key]] = 1
+		return one_hot
+		
 
-	def preprocess_answer(self, answer):
-		""" Helper method to preprocess an answer """
-		# TODO
-		return answer
+	def preprocess_answer(self, answer , vocab):
+		""" 
+		param: answer (String): answer string
+		vocab (dict): vocabulary
+		return: answer in one-hot vector 
+		"""
+		one_hot = [0] * len(vocab)
+		for token in self.tokenize(answer):
+			for key in token:
+				if key in vocab:
+					one_hot[vocab[key]] = 1
+		return one_hot
 
 	def extract_vocab(self,iterable, top_k=None, start=0):
 		"""
