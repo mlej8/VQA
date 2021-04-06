@@ -10,6 +10,9 @@ import json
 import datetime
 import copy
 import logging
+from collections import Counter
+import itertools
+import re
 
 from config import *
 
@@ -123,6 +126,7 @@ class VQA(Dataset):
 
 	def preprocess_image(self, img_path):
 		""" Helper method to preprocess an image """
+		#TODO transform all images into the same shape? 
 		
 		image = io.imread(img_path)
 		# apply transformation on the image
@@ -140,6 +144,32 @@ class VQA(Dataset):
 		""" Helper method to preprocess an answer """
 		# TODO
 		return answer
+
+	def extract_vocab(self,iterable, top_k=None, start=0):
+		"""
+		Turns an iterable of list of tokens into a vocabulary
+		"""
+		all_tokens = itertools.chain.from_iterable(iterable)
+		counter = Counter(all_tokens)
+		if top_k:
+			most_common = counter.most_common(top_k)
+			most_common = (t for t, c in most_common)
+		else:
+			most_common = counter.keys()
+		tokens = sorted(most_common, key=lambda x: (counter[x], x), reverse=True)
+		vocab = {t: i for i, t in enumerate(tokens, start=start)}
+		return vocab
+		
+	
+	def tokenize(self,string_list):
+		"""
+		:param str (String) : list of string to be tokenized
+
+		:return  str_tokenized  : tokenized string inlcuding punctuations as an iterable object
+		"""
+		for element in string_list:
+			tokenized = re.findall(r"[\w']+|[.,!?;]",element.lower())
+			yield tokenized
 
 	def info(self):
 		"""
@@ -256,3 +286,6 @@ class VQA(Dataset):
 		res.annotations['annotations'] = anns
 		res.create_index()
 		return res
+
+
+# %%
