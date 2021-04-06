@@ -3,13 +3,16 @@ from torch.utils.data import DataLoader, Dataset
 import torchvision.transforms as transforms
 
 from skimage import io
-
+import numpy as np
 import os
-
+from sklearn.preprocessing import OneHotEncoder
 import json
 import datetime
 import copy
 import logging
+from collections import Counter
+import itertools
+import re
 
 from config import *
 
@@ -123,6 +126,7 @@ class VQA(Dataset):
 
 	def preprocess_image(self, img_path):
 		""" Helper method to preprocess an image """
+		#TODO transform all images into the same shape? 
 		
 		image = io.imread(img_path)
 		# apply transformation on the image
@@ -131,15 +135,58 @@ class VQA(Dataset):
 		
 		return image
 
-	def preprocess_question(self, question):
-		""" Helper method to preprocess a question """
-		# TODO
-		return question
+	def preprocess_question(self, question, vocab):
+		""" 
+		param: question (String): question string
+				vocab (dict): vocabulary
+		return: question in one-hot vector 
+		"""
+		one_hot = [0] * len(vocab)
+		for token in self.tokenize(question):
+			for key in token:
+				if key in vocab:
+					one_hot[vocab[key]] = 1
+		return one_hot
+		
 
-	def preprocess_answer(self, answer):
-		""" Helper method to preprocess an answer """
-		# TODO
-		return answer
+	def preprocess_answer(self, answer , vocab):
+		""" 
+		param: answer (String): answer string
+		vocab (dict): vocabulary
+		return: answer in one-hot vector 
+		"""
+		one_hot = [0] * len(vocab)
+		for token in self.tokenize(answer):
+			for key in token:
+				if key in vocab:
+					one_hot[vocab[key]] = 1
+		return one_hot
+
+	def extract_vocab(self,iterable, top_k=None, start=0):
+		"""
+		Turns an iterable of list of tokens into a vocabulary
+		"""
+		all_tokens = itertools.chain.from_iterable(iterable)
+		counter = Counter(all_tokens)
+		if top_k:
+			most_common = counter.most_common(top_k)
+			most_common = (t for t, c in most_common)
+		else:
+			most_common = counter.keys()
+		tokens = sorted(most_common, key=lambda x: (counter[x], x), reverse=True)
+		vocab = {t: i for i, t in enumerate(tokens, start=start)}
+		return vocab
+		
+	
+	def tokenize(self,string_list):
+		"""
+		:param str (String) : list of string to be tokenized
+
+		:return  str_tokenized  : tokenized string inlcuding punctuations as an iterable object
+		"""
+		for element in string_list:
+			tokenized = re.findall(r"[\w']+|[.,!?;]",element.lower())
+			yield tokenized
 
 	def info(self):
 		"""
@@ -256,3 +303,6 @@ class VQA(Dataset):
 		res.annotations['annotations'] = anns
 		res.create_index()
 		return res
+
+
+# %%
