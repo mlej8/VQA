@@ -1,6 +1,8 @@
 from collections import Counter
 import itertools
 import re
+import numpy as np
+from sklearn.preprocessing import OneHotEncoder
 
 def tokenize(string_list):
 	"""
@@ -8,6 +10,7 @@ def tokenize(string_list):
 
 	:return  str_tokenized  : tokenized string as a list
 	"""
+
 	for element in string_list:
 		tokenized = re.findall(r"[\w']+|[.,!?;]",element.lower())
 		yield tokenized
@@ -28,3 +31,14 @@ def extract_vocab(iterable, top_k=None, start=0):
 		tokens = sorted(most_common, key=lambda x: (counter[x], x), reverse=True)
 		vocab = {t: i for i, t in enumerate(tokens, start=start)}
 		return vocab
+
+
+
+
+def preprocess_answer(answer , vocab):
+	one_hot = [0] * len(vocab)
+	for token in tokenize(answer):
+		for key in token:
+			if key in vocab:
+				one_hot[vocab[key]] = 1
+	return one_hot
