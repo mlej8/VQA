@@ -11,7 +11,7 @@ from datetime import datetime
 
 from utils import weights_init
 
-from vqa_cnn_lstm_params import *
+from params.vqa_cnn_lstm import *
 
 # setting the seed for reproducability (it is important to set seed when using DPP mode)
 seed_everything(7)
@@ -24,7 +24,7 @@ class OriginalVQA(pl.LightningModule):
         super(OriginalVQA, self).__init__()
         
         # the output size of Imagenet is 1000 and we want to resize it to 1024
-        self.googlenet = initialize_model("vgg19", 1024, True, use_pretrained=True) # TODO question: are we feature extracting or finetuning ? we can try both.. we are doing feature extract for the moment (e.g. not updating params of pretrained network) but might be useful to try finetuning should get better results
+        self.cnn = initialize_model("vgg19", 1024, True, use_pretrained=True) # TODO question: are we feature extracting or finetuning ? we can try both.. we are doing feature extract for the moment (e.g. not updating params of pretrained network) but might be useful to try finetuning should get better results
         
         # lstm
         self.word2vec = nn.Embedding(question_vocab_size, word_embed_size)
@@ -41,12 +41,6 @@ class OriginalVQA(pl.LightningModule):
         self.dropout = nn.Dropout(0.2)
         
         self.criterion = nn.CrossEntropyLoss()
-        self.log = CometLogger( 
-                    save_dir="logs/",
-                    workspace="vqa",
-                    project_name="vqa_original", 
-                    experiment_name="vqa_original_{}".format(datetime.now().strftime("%b_%d_%H_%M_%S")) 
-                )
 
         # initialize parameters for fc layers
         weights_init(lstm) # TODO add check to initialize the LSTM layer in utils.py
@@ -98,11 +92,11 @@ class OriginalVQA(pl.LightningModule):
         # get predictions using forward method 
         preds = self(image, question)
         
-        # logging training loss
-        self.log("train_loss", loss)
-
         # compute NLL loss
         loss = self.criterion(preds,labels)
+        
+        # logging training loss
+        self.log("train_loss", loss)
 
         return loss
     
@@ -115,3 +109,6 @@ class OriginalVQA(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
 
         return optimizer
+
+if __name__ == "__main__":
+    pass
