@@ -9,6 +9,8 @@ import json
 import datetime
 import copy
 import logging
+import nltk
+from nltk.tokenize import word_tokenize
 
 from config import *
 
@@ -131,9 +133,7 @@ class VQA(Dataset):
 		return (image, question, multiple_choice_answer)
 
 	def preprocess_image(self, img_path):
-		""" Helper method to preprocess an image """
-		#TODO transform all images into the same shape? 
-		
+		""" Helper method to preprocess an image """	
 		image = io.imread(img_path)
 		# apply transformation on the image
 		if self.transform:
@@ -141,33 +141,33 @@ class VQA(Dataset):
 		
 		return image
 
-	def preprocess_question(self, question, vocab):
+	def preprocess_question(self, question):
 		""" 
 		param: question (String): question string
-				vocab (dict): vocabulary
-		return: question in one-hot vector 
+		return: question in bag of words vector 
 		"""
 
 		# padd the question up to max question length
-		one_hot = [0] * len(vocab)
-		for token in self.tokenize(question):
-			for key in token:
-				if key in vocab:
-					one_hot[vocab[key]] = 1
-		return one_hot
+		
+		bag_of_words = [0] * self.questions_vocabulary.size
+		question = word_tokenize(question)
+		for question_str in question:
+			count = question.count(question_str)
+			idx = self.questions_vocabulary.word2idx(question_str)
+			bag_of_words[idx] = count
+		return bag_of_words
 		
 
-	def preprocess_answer(self, answer , vocab):
+	def preprocess_answer(self, answer):
 		""" 
 		param: answer (String): answer string
 		vocab (dict): vocabulary
 		return: answer in one-hot vector 
 		"""
-		one_hot = [0] * len(vocab)
-		for token in self.tokenize(answer):
-			for key in token:
-				if key in vocab:
-					one_hot[vocab[key]] = 1
+		one_hot = [0] * self.answers_vocabulary.size
+		answer = word_tokenize(answer)
+		idx = self.answers_vocabulary.word2idx(answer)
+		one_hot[idx] = 1
 		return one_hot
 
 	def info(self):
