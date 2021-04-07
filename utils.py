@@ -1,3 +1,5 @@
+import torch 
+
 def weights_init(layer):
     """ Initialize weights using Xavier uniform """
     if isinstance(layer, torch.nn.Conv2d):
