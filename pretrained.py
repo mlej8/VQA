@@ -247,8 +247,8 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
     elif model_name == "googlenet":
         model_ft = models.googlenet(pretrained=use_pretrained)
         set_parameter_requires_grad(model_ft, feature_extract)
-        num_ftrs = model_ft.classifier.in_features
-        model_ft.classifier = nn.Linear(num_ftrs, num_classes)
+        num_ftrs = model_ft.fc.in_features
+        model_ft.fc = nn.Linear(num_ftrs, num_classes)
         input_size = 224
 
     elif model_name == "inception": # NOTE: Inceptionv3 expects (299,299) sized images and has auxiliary output
@@ -268,103 +268,102 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
 
     return model_ft, input_size
 
-#######################
-### Hyperparameters ###
-#######################
+if __name__ == "__main__":
+    #######################
+    ### Hyperparameters ###
+    #######################
 
-# Number of classes in the dataset
-num_classes = 2
+    # Number of classes in the dataset
+    num_classes = 2
 
-# Batch size for training (change depending on how much memory you have)
-batch_size = 8
+    # Batch size for training (change depending on how much memory you have)
+    batch_size = 8
 
-# Number of epochs to train for
-num_epochs = 15
+    # Number of epochs to train for
+    num_epochs = 15
 
-# Flag for feature extracting vs finetuning: when True we only update the reshaped layer params, when False we finetune the entire model
-feature_extract = False
+    # Flag for feature extracting vs finetuning: when True we only update the reshaped layer params, when False we finetune the entire model
+    feature_extract = False
 
-# num of workers
-num_workers = 2
+    # num of workers
+    num_workers = 2
 
-# learning rate
-lr = 1e-5
+    # learning rate
+    lr = 1e-5
 
-# momentum
-momentum = 0.9
+    # momentum
+    momentum = 0.9
 
 
-################
-### Datasets ###
-################
+    ################
+    ### Datasets ###
+    ################
 
-# transformation for data augmentation
-transforms = transforms.Compose([
-        transforms.RandomResizedCrop(input_size),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-    ])
+    # transformation for data augmentation
+    transforms = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        ])
 
-# Load the CIFAR10 training and test datasets using torchvision
-cifar_trainset = torchvision.datasets.CIFAR10(root='./cifar10data', train=True, download=True, transform=transforms)
-cifar_testset = torchvision.datasets.CIFAR10(root='./cifar10data', train=False,download=True, transform=transforms)
+    # Load the CIFAR10 training and test datasets using torchvision
+    cifar_trainset = torchvision.datasets.CIFAR10(root='./cifar10data', train=True, download=True, transform=transforms)
+    cifar_testset = torchvision.datasets.CIFAR10(root='./cifar10data', train=False,download=True, transform=transforms)
 
-# Load the MNIST training and test datasets using torchvision
-mnist_trainset = torchvision.datasets.MNIST(root='./mnistdata', train=True, download=True, transform=transforms)
-mnist_testset = torchvision.datasets.MNIST(root='./mnistdata', train=False, download=True, transform=transforms)
+    # Load the MNIST training and test datasets using torchvision
+    mnist_trainset = torchvision.datasets.MNIST(root='./mnistdata', train=True, download=True, transform=transforms)
+    mnist_testset = torchvision.datasets.MNIST(root='./mnistdata', train=False, download=True, transform=transforms)
 
-###################
-### Dataloaders ###
-###################
+    ###################
+    ### Dataloaders ###
+    ###################
 
-# create train/test dataloader 
-trainloader = torch.utils.data.DataLoader(cifar_trainset, batch_size=batch_size,shuffle=True, num_workers=num_workers)
-testloader = torch.utils.data.DataLoader(cifar_testset, batch_size=batch_size,shuffle=True, num_workers=num_workers)
+    # create train/test dataloader 
+    trainloader = torch.utils.data.DataLoader(cifar_trainset, batch_size=batch_size,shuffle=True, num_workers=num_workers)
+    testloader = torch.utils.data.DataLoader(cifar_testset, batch_size=batch_size,shuffle=True, num_workers=num_workers)
 
-# define a dictionary of dataloaders 
-dataloaders_dict = {"train": trainloader, "val": testloader}
+    # define a dictionary of dataloaders 
+    dataloaders_dict = {"train": trainloader, "val": testloader}
 
-##############
-### Models ###
-##############
+    ##############
+    ### Models ###
+    ##############
 
-# Models to choose from [resnet, alexnet, vgg, squeezenet, densenet, inception]
-model_name = "resnet50"
-print(f"Chosen model: {model_name}")
+    # Models to choose from [resnet, alexnet, vgg, squeezenet, densenet, inception]
+    model_name = "resnet50"
+    print(f"Chosen model: {model_name}")
 
-# Initialize the model for this run
-model_ft, input_size = initialize_model(model_name, len(cifar_trainset.classes), feature_extract, use_pretrained=True)
+    # Initialize the model for this run
+    model_ft, input_size = initialize_model(model_name, len(cifar_trainset.classes), feature_extract, use_pretrained=True)
 
-# Print the model we just instantiated
-print(model_ft)
+    # Print the model we just instantiated
+    print(model_ft)
 
-# Send the model to GPU
-model_ft = model_ft.to(device)
+    # Send the model to GPU
+    model_ft = model_ft.to(device)
 
-#################
-### Optimizer ###
-#################
+    #################
+    ### Optimizer ###
+    #################
 
-# Gather the parameters to be optimized/updated in this run.
-params_to_update = model_ft.parameters()
-print("Params to learn:")
-if feature_extract: # if we are doing feature extract method, we will only update the parameters that we have just initialized, i.e. the parameters with requires_grad is True.
-    params_to_update = []
-    for name,param in model_ft.named_parameters():
-        if param.requires_grad == True:
-            params_to_update.append(param)
-            print("\t",name)
-else: # if we are finetuning we will be updating all parameters.
-    for name,param in model_ft.named_parameters():
-        if param.requires_grad == True:
-            print("\t",name)
+    # Gather the parameters to be optimized/updated in this run.
+    params_to_update = model_ft.parameters()
+    print("Params to learn:")
+    if feature_extract: # if we are doing feature extract method, we will only update the parameters that we have just initialized, i.e. the parameters with requires_grad is True.
+        params_to_update = []
+        for name,param in model_ft.named_parameters():
+            if param.requires_grad == True:
+                params_to_update.append(param)
+                print("\t",name)
+    else: # if we are finetuning we will be updating all parameters.
+        for name,param in model_ft.named_parameters():
+            if param.requires_grad == True:
+                print("\t",name)
 
-# Observe that all parameters are being optimized
-optimizer_ft = optim.SGD(params_to_update, lr=lr, momentum=momentum)
+    # Observe that all parameters are being optimized
+    optimizer_ft = optim.SGD(params_to_update, lr=lr, momentum=momentum)
 
-# define loss funciton
-criterion = nn.CrossEntropyLoss()
+    # define loss function
+    criterion = nn.CrossEntropyLoss()
 
-# Train and evaluate
-model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs, is_inception=(model_name=="inception"))
+    # Train and evaluate
+    model_ft, hist = train_model(model_ft, dataloaders_dict, criterion, optimizer_ft, num_epochs=num_epochs, is_inception=(model_name=="inception"))
