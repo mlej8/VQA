@@ -21,6 +21,23 @@ Install requirements if using python virtual environment: `pip install -r requir
 To update requirements file with conda: `conda list -e > requirements.txt`
 
 To update requirements file with pip: `pip freeze > requirements.txt`
+
+# Download VQA datasets
+Run the bash script `./fetchdata.sh` to download all datasets required for VQA v2.0 real images task. This script also sets up the directory structure.
+
+datasets/
+    - Annotations
+    - Complementary Pairs
+    - Images
+    - Questions
+
+# Preprocessing
+
+In order to build the vocabulary for the questions and the answers, run `python -m preprocessing.preprocess_text`. This will create a directory `datasets/Vocabulary` where the vocabularies for questions and answers are stored.
+
+# Models
+
+To run the simple VQA baseline: `python simple_vqa_baseline.py`
 ## Credits
 The PythonHelperTools, PythonEvaluationTools, QuestionTypes and Results comes from the following repository: https://github.com/GT-Vision-Lab/VQA
 
