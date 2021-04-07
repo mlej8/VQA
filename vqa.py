@@ -2,22 +2,32 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 import torchvision.transforms as transforms
 
-from skimage import io
+from PIL import Image
+
 import numpy as np
 import os
 import json
 import datetime
 import copy
 import logging
-import nltk
-from nltk.tokenize import word_tokenize
+
+from preprocessing.vocabulary import Vocabulary
 
 from config import *
+
+from preprocessing.preprocess_text import preprocess_question_sentence
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class VQA(Dataset):
+	
+	# answer vocabulary
+	answers_vocabulary = Vocabulary(a_vocab_path)
+
+	# question vocabulary
+	questions_vocabulary = Vocabulary(q_vocab_path)
+	
 	def __init__(self, 
 				annotation_file: str, 
 				question_file: str, 
@@ -37,14 +47,8 @@ class VQA(Dataset):
 		# TODO find captions for MSCOCO
 		# TODO group questions by answer_type
 		
-		with open(questions_stats_path, "w") as f:
-    		self.max_question_length = json.load(f)["max_question_length"]
-
-		# answer vocabulary
-        self.answers_vocabulary = Vocabulary(a_vocab_path)
-
-		# question vocabulary
-		self.questions_vocabulary = Vocabulary(q_vocab_path)
+		with open(questions_stats_path, "r") as f:
+			self.max_question_length = json.load(f)["max_question_length"]
 
 		# load dataset
 		logger.info('Loading VQA annotations and questions into memory...')
@@ -130,11 +134,13 @@ class VQA(Dataset):
 
 		# TODO process answer depending on answer type? # if annotation["answer_type"] == "number": # elif annotation["answer_type"] == "yes/no": # elif annotation["answer_type"] == "other":
 
-		return (image, question, multiple_choice_answer)
+		return (image, question, answer)
 
 	def preprocess_image(self, img_path):
 		""" Helper method to preprocess an image """	
-		image = io.imread(img_path)
+		# always opening images in rgb - so that greyscale images are copy through all 3 channels
+		image = Image.open(img_path).convert("RGB")
+
 		# apply transformation on the image
 		if self.transform:
 			image = self.transform(image)
@@ -146,15 +152,10 @@ class VQA(Dataset):
 		param: question (String): question string
 		return: question in bag of words vector 
 		"""
-
-		# padd the question up to max question length
-		
-		bag_of_words = [0] * self.questions_vocabulary.size
-		question = word_tokenize(question)
-		for question_str in question:
-			count = question.count(question_str)
-			idx = self.questions_vocabulary.word2idx(question_str)
-			bag_of_words[idx] = count
+		bag_of_words = torch.zeros(self.questions_vocabulary.size)
+		words = preprocess_question_sentence(question)
+		for word in words:
+			bag_of_words[self.questions_vocabulary.word2idx(word)] += 1
 		return bag_of_words
 		
 
@@ -164,10 +165,8 @@ class VQA(Dataset):
 		vocab (dict): vocabulary
 		return: answer in one-hot vector 
 		"""
-		one_hot = [0] * self.answers_vocabulary.size
-		answer = word_tokenize(answer)
-		idx = self.answers_vocabulary.word2idx(answer)
-		one_hot[idx] = 1
+		one_hot = torch.zeros(self.answers_vocabulary.size)
+		one_hot[self.answers_vocabulary.word2idx(answer)] = 1
 		return one_hot
 
 	def info(self):
@@ -286,22 +285,9 @@ class VQA(Dataset):
 		res.create_index()
 		return res
 
-def pad_questions():
-	# TODO pad questions with "pad"
-	pass
-
-if __name__ == '__main__':
-	# initialize VQA api for QA annotations
-	train_dataset = VQA(
-		train_annFile,
-		train_quesFile,
-		train_imgDir
-		) 
-	train_dataloader = DataLoader(
-        train_dataset,
-        batch_size=32, 
-        shuffle=False, 
-        # collate_fn=preprocess,
-        num_workers=0
-        )
-	next(iter(train_dataloader))
+def vqa_collate(batch):
+	""" Custom collate function for dataloader to filter out bad samples from Weather Dataset """
+	images = torch.stack([item[0] for item in batch]).float()
+	questions = torch.stack([item[1] for item in batch]).float()
+	answers = torch.stack([item[2] for item in batch]).float()
+	return (images, questions, answers)
