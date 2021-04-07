@@ -23,7 +23,7 @@ if __name__ == '__main__':
 	"""
 	All possible quesTypes for abstract and mscoco has been provided in respective text files in ../QuestionTypes/ folder.
 	"""
-	annIds = vqa.get_question_ids(quesTypes='how many');   
+	annIds = vqa.get_question_ids(quesTypes='how many')
 	anns = vqa.load_questions_and_answers(annIds)
 	randomAnn = random.choice(anns)
 	vqa.show_questions_and_answers([randomAnn])
@@ -42,7 +42,7 @@ if __name__ == '__main__':
 	number
 	other
 	"""
-	annIds = vqa.get_question_ids(ansTypes='yes/no');   
+	annIds = vqa.get_question_ids(ansTypes='yes/no')   
 	anns = vqa.load_questions_and_answers(annIds)
 	randomAnn = random.choice(anns)
 	vqa.show_questions_and_answers([randomAnn])
@@ -60,7 +60,7 @@ if __name__ == '__main__':
 	Above method can be used to retrieve imageIds for given question Ids or given question types or given answer types.
 	"""
 	ids = vqa.get_img_ids()
-	annIds = vqa.get_question_ids(imgIds=random.sample(ids,5));  
+	annIds = vqa.get_question_ids(imgIds=random.sample(ids,5))  
 	anns = vqa.load_questions_and_answers(annIds)
 	randomAnn = random.choice(anns)
 	vqa.show_questions_and_answers([randomAnn])  
