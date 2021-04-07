@@ -116,7 +116,6 @@ class SimpleBaselineVQA(pl.LightningModule):
         return optimizer
 
 if __name__ == "__main__":
-    num_workers = 0 
     preprocess = transforms.Compose(
         [
             transforms.ToTensor(),
