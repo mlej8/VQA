@@ -64,7 +64,7 @@ def make_questions_vocabulary(questions_dir):
         logger.info('Done: %s', dataset)
 
     # add start and end token
-    vocabulary = list(vocabulary)
+    vocabulary = ["<pad>", "<unk>"] + list(vocabulary) # adding a token for padding and another one for unknown
     
     # max question length
     max_len_q = max(q_len)
@@ -82,36 +82,11 @@ def make_questions_vocabulary(questions_dir):
     logger.info('The total number of words for the questions vocabulary: %d' % len(vocabulary))
     logger.info('Maximum length of a question: %d' % max_len_q)
     
-    max_length_path = os.path.join(vocabulary_dir, "max_question_length.txt")
+    max_length_path = os.path.join(vocabulary_dir, "questions_stats.txt")
     with open(max_length_path, 'w') as f:
-        f.write(str(max_len_q))
+        json.dump({"max_question_length":max_len_q, "total_number_words": len(vocabulary)}, f)
 
     logger.info('Done building questions vocabulary in %0.2fs.' % ((datetime.datetime.utcnow() - start_time).total_seconds()))
-
-# these try to emulate the original normalization scheme for answers
-_period_strip = re.compile(r'(?!<=\d)(\.)(?!\d)')
-_comma_strip = re.compile(r'(\d)(,)(\d)')
-_punctuation_chars = re.escape(r';/[]"{}()=+\_-><@`,?!')
-_punctuation = re.compile(r'([{}])'.format(re.escape(_punctuation_chars)))
-_punctuation_with_a_space = re.compile(r'(?<= )([{0}])|([{0}])(?= )'.format(_punctuation_chars))
-
-# TODO understand how process_punctuation
-# def process_punctuation(s):
-#     # The only normalization that is applied to both machine generated answers as well as
-#     # ground truth answers is replacing most punctuation with space (see [0] and [1]).
-#     # Since potential machine generated answers are just taken from most common answers, applying the other
-#     # normalizations is not needed, assuming that the human answers are already normalized.
-#     # [0]: http://visualqa.org/evaluation.html
-#     # [1]: https://github.com/VT-vision-lab/VQA/blob/3849b1eae04a0ffd83f56ad6f70ebd0767e09e0f/PythonEvaluationTools/vqaEvaluation/vqaEval.py#L96
-    
-#     if _punctuation.search(s) is None:
-#         return s
-#     s = _punctuation_with_a_space.sub('', s)
-#     if re.search(_comma_strip, s) is not None:
-#         s = s.replace(',', '')
-#     s = _punctuation.sub(' ', s)
-#     s = _period_strip.sub('', s)
-#     return s.strip()
 
 def make_answers_vocabulary(annotations_dir, n_answers=1000):
     """ 
@@ -150,10 +125,13 @@ def make_answers_vocabulary(annotations_dir, n_answers=1000):
     answers = sorted(answers, key=lambda x: (answers[x], x), reverse=True)
     
     # make sure the end token is not in answers
-    if n_answers > len(answers):
-        top_answers = answers
+    if n_answers > len(answers) + 1:
+        top_answers = answers 
     else: 
-        top_answers = answers[:n_answers]
+        top_answers = answers[:n_answers-1] # -1 for <unk> token
+    
+    # add <unk> token to answers
+    top_answers = ["<unk>"] + top_answers
 
     # make sure that vocabulary dir exists
     vocabulary_dir = os.path.join(dataDir, "Vocabulary")

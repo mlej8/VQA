@@ -5,14 +5,10 @@ import torchvision.transforms as transforms
 from skimage import io
 import numpy as np
 import os
-from sklearn.preprocessing import OneHotEncoder
 import json
 import datetime
 import copy
 import logging
-from collections import Counter
-import itertools
-import re
 
 from config import *
 
@@ -20,7 +16,14 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class VQA(Dataset):
-	def __init__(self, annotation_file: str, question_file: str, img_dir: str, transform=None):
+	def __init__(self, 
+				annotation_file: str, 
+				question_file: str, 
+				img_dir: str, 
+				transform=transforms.Compose([
+					transforms.ToTensor(),
+					transforms.Resize((224,224)),
+					])):
 		"""
 		Create the VQA Dataset
 
@@ -32,11 +35,14 @@ class VQA(Dataset):
 		# TODO find captions for MSCOCO
 		# TODO group questions by answer_type
 		
+		with open(questions_stats_path, "w") as f:
+    		self.max_question_length = json.load(f)["max_question_length"]
+
 		# answer vocabulary
-		self.ans_vocab = {}
+        self.answers_vocabulary = Vocabulary(a_vocab_path)
 
 		# question vocabulary
-		self.q_vocab = {}
+		self.questions_vocabulary = Vocabulary(q_vocab_path)
 
 		# load dataset
 		logger.info('Loading VQA annotations and questions into memory...')
@@ -122,7 +128,7 @@ class VQA(Dataset):
 
 		# TODO process answer depending on answer type? # if annotation["answer_type"] == "number": # elif annotation["answer_type"] == "yes/no": # elif annotation["answer_type"] == "other":
 
-		return (question, image, multiple_choice_answer)
+		return (image, question, multiple_choice_answer)
 
 	def preprocess_image(self, img_path):
 		""" Helper method to preprocess an image """
@@ -141,6 +147,8 @@ class VQA(Dataset):
 				vocab (dict): vocabulary
 		return: question in one-hot vector 
 		"""
+
+		# padd the question up to max question length
 		one_hot = [0] * len(vocab)
 		for token in self.tokenize(question):
 			for key in token:
@@ -161,32 +169,6 @@ class VQA(Dataset):
 				if key in vocab:
 					one_hot[vocab[key]] = 1
 		return one_hot
-
-	def extract_vocab(self,iterable, top_k=None, start=0):
-		"""
-		Turns an iterable of list of tokens into a vocabulary
-		"""
-		all_tokens = itertools.chain.from_iterable(iterable)
-		counter = Counter(all_tokens)
-		if top_k:
-			most_common = counter.most_common(top_k)
-			most_common = (t for t, c in most_common)
-		else:
-			most_common = counter.keys()
-		tokens = sorted(most_common, key=lambda x: (counter[x], x), reverse=True)
-		vocab = {t: i for i, t in enumerate(tokens, start=start)}
-		return vocab
-		
-	
-	def tokenize(self,string_list):
-		"""
-		:param str (String) : list of string to be tokenized
-
-		:return  str_tokenized  : tokenized string inlcuding punctuations as an iterable object
-		"""
-		for element in string_list:
-			tokenized = re.findall(r"[\w']+|[.,!?;]",element.lower())
-			yield tokenized
 
 	def info(self):
 		"""
@@ -304,5 +286,22 @@ class VQA(Dataset):
 		res.create_index()
 		return res
 
+def pad_questions():
+	# TODO pad questions with "pad"
+	pass
 
-# %%
+if __name__ == '__main__':
+	# initialize VQA api for QA annotations
+	train_dataset = VQA(
+		train_annFile,
+		train_quesFile,
+		train_imgDir
+		) 
+	train_dataloader = DataLoader(
+        train_dataset,
+        batch_size=32, 
+        shuffle=False, 
+        # collate_fn=preprocess,
+        num_workers=0
+        )
+	next(iter(train_dataloader))
