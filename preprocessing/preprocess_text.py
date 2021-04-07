@@ -19,6 +19,11 @@ nltk.download('punkt')
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def preprocess_question_sentence(question):
+    """ Helper method that takes a question and returns the word tokens of this sentence."""
+    # tokenize lowered sentence without punctuation
+    return word_tokenize(question.lower()[:-1])
+
 def make_questions_vocabulary(questions_dir):
     """
     Make dictionary for all questions and save them into text file.
@@ -50,10 +55,7 @@ def make_questions_vocabulary(questions_dir):
         
         for question_obj in questions:
             # get a question without punctuation
-            question = question_obj["question"].lower()[:-1]
-
-            # tokenize sentence 
-            words = word_tokenize(question)
+            words = preprocess_question_sentence(question_obj["question"])
             
             # update the words
             vocabulary.update(words)
