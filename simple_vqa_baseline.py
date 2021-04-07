@@ -11,7 +11,12 @@ from datetime import datetime
 
 from utils import weights_init
 
-from simple_baseline_vqa_params import *
+from params.simple_vqa_baseline import *
+from config import *
+
+from preprocessing.vocabulary import Vocabulary
+
+from train import train
 
 # setting the seed for reproducability (it is important to set seed when using DPP mode)
 seed_everything(7)
@@ -20,16 +25,17 @@ class SimpleBaselineVQA(pl.LightningModule):
     """
     Predicts an answer to a question about an image using the Simple Baseline for Visual Question Answering paper (Zhou et al, 2017).
     """
-    def __init__(self, num_questions, num_answers):
+    def __init__(self, questions_vocab_size, answers_vocab_size=1000):
         super(SimpleBaselineVQA, self).__init__()
         
         # the output size of Imagenet is 1000 and we want to resize it to 1024
-        self.googlenet = initialize_model("googlenet", 1024, True, use_pretrained=True) # TODO question: are we feature extracting or finetuning ? we can try both.. 
-        self.fc_questions = nn.Linear(num_questions, 1024)
-        self.fc2 = nn.Linear(2048, num_answers)
+        self.googlenet, self.input_size = initialize_model("googlenet", 1024, True, use_pretrained=True) # TODO try feature extracting vs finetuning
+        self.fc_questions = nn.Linear(questions_vocab_size, 1024)
+        self.fc2 = nn.Linear(2048, answers_vocab_size)
         
+        # using negative log likelihood as loss
         self.criterion = nn.NLLLoss()
-        self.log = CometLogger( 
+        self.logger = CometLogger( 
                     save_dir="logs/",
                     workspace="vqa",
                     project_name="simple_baseline_vqa_by_fb", 
@@ -49,7 +55,7 @@ class SimpleBaselineVQA(pl.LightningModule):
         question_encodings, _ = torch.max(question_encodings, 1)
         
         # getting visual features
-        img_features = self.googlenet(image)
+        img_feat = self.googlenet(image)
 
         # getting language features
         ques_features = self.fc_questions(question_encodings)
@@ -68,16 +74,35 @@ class SimpleBaselineVQA(pl.LightningModule):
         """
 
         # The LightningModule knows what device it is on - you can reference via `self.device`, it makes your models hardware agnostic (you can train on any number of GPUs spread out on differnet machines)
-        (image, question_encodings), labels = batch
+        (image, question_encodings, answers) = batch
         
         # get predictions using forward method 
         preds = self(image, question_encodings)
         
-        # logging training loss
-        self.log("train_loss", loss)
-
         # compute NLL loss
-        loss = self.criterion(preds,labels)
+        loss = self.criterion(preds, answers)
+        
+        # logging training loss
+        self.logger("train_loss", loss)
+
+        return loss
+
+    def training_step(self, batch):
+        """ 
+        validation_step method defines a single iteration in the validation loop. 
+        """
+
+        # The LightningModule knows what device it is on - you can reference via `self.device`
+        (image, question_encodings, answers) = batch
+        
+        # get predictions using forward method 
+        preds = self(image, question_encodings)
+        
+        # compute NLL loss
+        loss = self.criterion(preds, answers)
+        
+        # logging validation loss
+        self.logger("validation_loss", loss)
 
         return loss
     
@@ -85,8 +110,10 @@ class SimpleBaselineVQA(pl.LightningModule):
         """ 
         Configure our optimizers.
         """
-
         # creating optimizer for our model
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
 
         return optimizer
+
+if __name__ == "__main__":
+    train(SimpleBaselineVQA(num_questions=1024, num_answers=10), epochs)

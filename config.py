@@ -21,3 +21,10 @@ test_dataSubType    = 'test2015'
 test_annFile        = '%s/Annotations/%s%s_%s_annotations.json'%(dataDir, versionType, dataType, test_dataSubType)
 test_quesFile       = '%s/Questions/%s%s_%s_%s_questions.json'%(dataDir, versionType, taskType, dataType, test_dataSubType)
 test_imgDir 		= '%s/Images/%s/%s/' %(dataDir, dataType, test_dataSubType)
+
+# vocabularies
+q_vocab_path = "datasets/Vocabulary/questions_vocabulary.txt" 
+a_vocab_path = "datasets/Vocabulary/answers_vocabulary.txt"
+
+# stats about questions
+questions_stats_path = "datasets/Vocabulary/questions_stats.txt"
