@@ -40,7 +40,7 @@ def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs
     # define trainer 
     trainer = pl.Trainer(
       default_root_dir=folder, # Lightning automates saving and loading checkpoints
-      max_epochs=epochs, gpus=-1,
+      max_epochs=epochs, gpus=0,
       logger=logger, 
       progress_bar_refresh_rate=30, 
       callbacks=[early_stopping_callback, checkpoint_callback])
@@ -52,14 +52,14 @@ def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs
     PATH = folder + '/result'
     with open(PATH, "w") as f:
         f.write(f"Model: {str(model)}\n")
-        f.write(json.dumps(model.logger.metrics))
+        f.write(json.dumps(logger.metrics))
         f.write("\n")
-        f.write(f"Lowest training loss: {str(min(model.logger.metrics['train_loss']))}\n")
+        f.write(f"Lowest training loss: {str(min(logger.metrics['train_loss']))}\n")
         f.write(f"Lowest validation loss: {str(min(model.metrics['val_loss']))}\n")
 
     # plot training vs validation loss
-    plt.plot(range(len(model.logger.metrics['train_loss'])), model.logger.metrics['train_loss'], lw=2, label='Training Loss')
-    plt.plot(range(len(model.logger.metrics['val_loss'])), model.logger.metrics['val_loss'], lw=2, label='Validation Loss')
+    plt.plot(range(len(logger.metrics['train_loss'])), logger.metrics['train_loss'], lw=2, label='Training Loss')
+    plt.plot(range(len(logger.metrics['val_loss'])), logger.metrics['val_loss'], lw=2, label='Validation Loss')
     plt.legend()
     plt.xlabel('Epoch')
     plt.ylabel('Loss')

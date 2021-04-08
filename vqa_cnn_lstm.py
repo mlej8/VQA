@@ -1,17 +1,23 @@
+import comet_ml
 import torch
+
+from train import train
 import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
+import torchvision.transforms as transforms
+from config import *
+from pytorch_lightning.utilities.seed import seed_everything
 
-from pytorch_lightning.logging import CometLogger
-from pytorch_lightning.utilities import seed_everything
-
+from torch.utils.data import DataLoader
 from pretrained import initialize_model
 from datetime import datetime
 
 from utils import weights_init
 
 from params.vqa_cnn_lstm import *
+
+from vqa import VQA, vqa_collate
 
 # setting the seed for reproducability (it is important to set seed when using DPP mode)
 seed_everything(7)
@@ -24,7 +30,7 @@ class OriginalVQA(pl.LightningModule):
         super(OriginalVQA, self).__init__()
         
         # the output size of Imagenet is 1000 and we want to resize it to 1024
-        self.cnn = initialize_model("vgg19", 1024, True, use_pretrained=True) # TODO question: are we feature extracting or finetuning ? we can try both.. we are doing feature extract for the moment (e.g. not updating params of pretrained network) but might be useful to try finetuning should get better results
+        self.cnn, self.input_size = initialize_model("vgg19", 1024, True, use_pretrained=True) # TODO question: are we feature extracting or finetuning ? we can try both.. we are doing feature extract for the moment (e.g. not updating params of pretrained network) but might be useful to try finetuning should get better results
         
         # lstm
         self.word2vec = nn.Embedding(question_vocab_size, word_embed_size)
@@ -43,17 +49,17 @@ class OriginalVQA(pl.LightningModule):
         self.criterion = nn.CrossEntropyLoss()
 
         # initialize parameters for fc layers
-        weights_init(lstm) # TODO add check to initialize the LSTM layer in utils.py
-        weights_init(fc1) 
-        weights_init(fc2) 
-        weights_init(fc_questions)
+        weights_init(self.lstm) # TODO add check to initialize the LSTM layer in utils.py
+        weights_init(self.fc1) 
+        weights_init(self.fc2) 
+        weights_init(self.fc_questions)
 
     def forward(self, image, question):
         """ 
         Since we are using Pytorch Lightning, the forward method defines how the LightningModule behaves during inference/prediction. 
         """
         # getting visual features
-        img_features = self.googlenet(image)
+        img_features = self.cnn(image)
 
         # TODO maybe normalize the output ? see code below
         # l2_norm = torch.linalg.norm(img_features, p=2, dim=1)
@@ -172,8 +178,8 @@ if __name__ == "__main__":
 	)
 
     model = OriginalVQA(
-        questions_vocab_size=VQA.questions_vocabulary.size,
-        answers_vocab_size=VQA.answers_vocabulary.size
+        question_vocab_size=VQA.questions_vocabulary.size,
+        ans_vocab_size=VQA.answers_vocabulary.size
         )
 
     train(model, train_dataloader, val_dataloader, epochs)
