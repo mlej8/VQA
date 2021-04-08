@@ -81,25 +81,48 @@ class OriginalVQA(pl.LightningModule):
 
         return self.softmax(logits)
 
-    def training_step(self, batch):
+    def training_step(self, batch, batch_idx):
         """ 
         training_step method defines a single iteration in the training loop. 
         """
 
         # The LightningModule knows what device it is on - you can reference via `self.device`, it makes your models hardware agnostic (you can train on any number of GPUs spread out on differnet machines)
-        (image, question), labels = batch
+        (image, question_encodings, answers) = batch
         
         # get predictions using forward method 
-        preds = self(image, question)
+        preds = self(image, question_encodings)
         
-        # compute NLL loss
-        loss = self.criterion(preds,labels)
+        # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
+        _, labels = torch.max(answers, dim=1)
+        
+        # compute CE loss
+        loss = self.criterion(preds, labels)
         
         # logging training loss
-        self.log("train_loss", loss)
+        self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
         return loss
-    
+    def validation_step(self, batch, batch_idx):
+        """ 
+        validation_step method defines a single iteration in the validation loop. 
+        """
+
+        # The LightningModule knows what device it is on - you can reference via `self.device`
+        (image, question_encodings, answers) = batch
+        
+        # get predictions using forward method 
+        preds = self(image, question_encodings)
+        
+        # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
+        _, labels = torch.max(answers, dim=1)
+
+        # compute CE loss
+        loss = self.criterion(preds, labels)
+        
+        # logging validation loss
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+
+        return loss
     def configure_optimizers(self):
         """ 
         Configure our optimizers.
@@ -111,4 +134,46 @@ class OriginalVQA(pl.LightningModule):
         return optimizer
 
 if __name__ == "__main__":
-    pass
+    preprocess = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            transforms.Resize((224,224)),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # TODO find mean/std for train/val coco
+        ])
+    
+    # initialize training and validation dataset
+    train_dataset = VQA(
+        train_annFile,
+        train_quesFile,
+        train_imgDir,
+        transform=preprocess
+        ) 
+    val_dataset = VQA(
+        val_annFile,
+        val_quesFile,
+        val_imgDir,
+        transform=preprocess
+        ) 
+    
+    train_dataloader = DataLoader(
+    	train_dataset,
+    	batch_size=batch_size, 
+    	shuffle=shuffle, 
+    	num_workers=num_workers,
+        collate_fn=vqa_collate
+	)
+    
+    val_dataloader = DataLoader(
+    	val_dataset,
+    	batch_size=batch_size, 
+    	shuffle=False,  # set False for validation dataloader
+    	num_workers=num_workers,
+        collate_fn=vqa_collate
+	)
+
+    model = OriginalVQA(
+        questions_vocab_size=VQA.questions_vocabulary.size,
+        answers_vocab_size=VQA.answers_vocabulary.size
+        )
+
+    train(model, train_dataloader, val_dataloader, epochs)
