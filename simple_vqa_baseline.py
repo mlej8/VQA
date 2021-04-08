@@ -39,6 +39,9 @@ class SimpleBaselineVQA(pl.LightningModule):
         
         # using negative log likelihood as loss
         self.criterion = nn.CrossEntropyLoss()
+        
+        # activation
+        self.leaky_relu = nn.LeakyReLU()
 
         # initialize parameters for fc layers
         weights_init(self.fc2)
@@ -49,10 +52,10 @@ class SimpleBaselineVQA(pl.LightningModule):
         Since we are using Pytorch Lightning, the forward method defines how the LightningModule behaves during inference/prediction. 
         """
         # getting visual features
-        img_feat = self.googlenet(image)
+        img_feat = self.leaky_relu(self.googlenet(image))
 
         # getting language features
-        ques_features = self.fc_questions(question_encodings)
+        ques_features = self.leaky_relu(self.fc_questions(question_encodings))
 
         # concatenate features        
         features = torch.cat((img_feat, ques_features), 1)
