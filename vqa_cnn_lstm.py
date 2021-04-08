@@ -48,12 +48,15 @@ class OriginalVQA(pl.LightningModule):
         weights_init(fc2) 
         weights_init(fc_questions)
 
+        # save hyperparameters
+        self.save_hyperparameters()
+
     def forward(self, image, question):
         """ 
         Since we are using Pytorch Lightning, the forward method defines how the LightningModule behaves during inference/prediction. 
         """
         # getting visual features
-        img_features = self.googlenet(image)
+        img_features = self.cnn(image)
 
         # TODO maybe normalize the output ? see code below
         # l2_norm = torch.linalg.norm(img_features, p=2, dim=1)
@@ -92,11 +95,11 @@ class OriginalVQA(pl.LightningModule):
         # get predictions using forward method 
         preds = self(image, question)
         
-        # compute NLL loss
+        # compute CE loss
         loss = self.criterion(preds,labels)
         
         # logging training loss
-        self.log("train_loss", loss)
+        self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
         return loss
     
