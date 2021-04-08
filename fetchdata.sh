@@ -20,10 +20,19 @@ wget http://images.cocodataset.org/zips/train2014.zip http://images.cocodataset.
 mkdir Annotations
 mkdir "Complementary Pairs"
 mkdir Questions
-mkdir Images
+mkdir Images/mscoco
 
-# unzip images
-unzip train2014.zip val2014.zip test2015.zip -d Images
-unzip v2_Annotations_Train_mscoco.zip v2_Annotations_Val_mscoco.zip -d Annotations
-unzip v2_Complementary_Pairs_Train_mscoco.zip v2_Complementary_Pairs_Val_mscoco.zip -d "Complementary Pairs"
-unzip v2_Questions_Train_mscoco.zip v2_Questions_Val_mscoco.zip v2_Questions_Test_mscoco.zip -d Questions
+# unzip datasets
+unzip train2014.zip  -d Images/mscoco
+unzip val2014.zip -d Images/mscoco
+unzip test2015.zip -d Images/mscoco
+unzip v2_Annotations_Train_mscoco.zip -d Annotations
+unzip v2_Annotations_Val_mscoco.zip -d Annotations
+unzip v2_Complementary_Pairs_Train_mscoco.zip -d "Complementary Pairs"
+unzip v2_Complementary_Pairs_Val_mscoco.zip -d "Complementary Pairs"
+unzip v2_Questions_Train_mscoco.zip -d Questions
+unzip v2_Questions_Val_mscoco.zip -d Questions
+unzip v2_Questions_Test_mscoco.zip -d Questions
+
+# delete all zip files
+rm *.zip
