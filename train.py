@@ -40,7 +40,7 @@ def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs
     # define trainer 
     trainer = pl.Trainer(
       default_root_dir=folder, # Lightning automates saving and loading checkpoints
-      max_epochs=epochs, gpus=1,
+      max_epochs=epochs, gpus=-1,
       logger=logger, 
       progress_bar_refresh_rate=30, 
       callbacks=[early_stopping_callback, checkpoint_callback])
