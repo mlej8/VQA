@@ -13,7 +13,7 @@ seq_length = 50
 
 # parameters for learning
 uniformLR = 0
-epochs = 100
+epochs = 50
 nepoch_lr = 100
 decay = 1.2
 embed_word = 1024

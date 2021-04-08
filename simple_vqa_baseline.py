@@ -80,7 +80,7 @@ class SimpleBaselineVQA(pl.LightningModule):
         loss = self.criterion(preds, labels)
         
         # logging training loss
-        self.log("train_loss", loss)
+        self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
         return loss
 
@@ -102,7 +102,7 @@ class SimpleBaselineVQA(pl.LightningModule):
         loss = self.criterion(preds, labels)
         
         # logging validation loss
-        self.log("val_loss", loss)
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
         return loss
     
