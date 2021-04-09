@@ -1,17 +1,23 @@
+import comet_ml
 import torch
+
+from train import train
 import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
+import torchvision.transforms as transforms
+from config import *
+from pytorch_lightning.utilities.seed import seed_everything
 
-from pytorch_lightning.logging import CometLogger
-from pytorch_lightning.utilities import seed_everything
-
+from torch.utils.data import DataLoader
 from pretrained import initialize_model
 from datetime import datetime
 
 from utils import weights_init
 
 from params.vqa_cnn_lstm import *
+
+from vqa import VQA, vqa_collate
 
 # setting the seed for reproducability (it is important to set seed when using DPP mode)
 seed_everything(7)
@@ -24,7 +30,7 @@ class OriginalVQA(pl.LightningModule):
         super(OriginalVQA, self).__init__()
         
         # the output size of Imagenet is 1000 and we want to resize it to 1024
-        self.cnn = initialize_model("vgg19", 1024, True, use_pretrained=True) # TODO question: are we feature extracting or finetuning ? we can try both.. we are doing feature extract for the moment (e.g. not updating params of pretrained network) but might be useful to try finetuning should get better results
+        self.cnn, self.input_size = initialize_model("vgg19", 1024, True, use_pretrained=True) # TODO question: are we feature extracting or finetuning ? we can try both.. we are doing feature extract for the moment (e.g. not updating params of pretrained network) but might be useful to try finetuning should get better results
         
         # lstm
         self.word2vec = nn.Embedding(question_vocab_size, word_embed_size)
@@ -43,10 +49,10 @@ class OriginalVQA(pl.LightningModule):
         self.criterion = nn.CrossEntropyLoss()
 
         # initialize parameters for fc layers
-        weights_init(lstm) # TODO add check to initialize the LSTM layer in utils.py
-        weights_init(fc1) 
-        weights_init(fc2) 
-        weights_init(fc_questions)
+        weights_init(self.lstm) # TODO add check to initialize the LSTM layer in utils.py
+        weights_init(self.fc1) 
+        weights_init(self.fc2) 
+        weights_init(self.fc_questions)
 
         # save hyperparameters
         self.save_hyperparameters()
@@ -84,25 +90,48 @@ class OriginalVQA(pl.LightningModule):
 
         return self.softmax(logits)
 
-    def training_step(self, batch):
+    def training_step(self, batch, batch_idx):
         """ 
         training_step method defines a single iteration in the training loop. 
         """
 
         # The LightningModule knows what device it is on - you can reference via `self.device`, it makes your models hardware agnostic (you can train on any number of GPUs spread out on differnet machines)
-        (image, question), labels = batch
+        (image, question_encodings, answers) = batch
         
         # get predictions using forward method 
-        preds = self(image, question)
+        preds = self(image, question_encodings)
+        
+        # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
+        _, labels = torch.max(answers, dim=1)
         
         # compute CE loss
-        loss = self.criterion(preds,labels)
+        loss = self.criterion(preds, labels)
         
         # logging training loss
         self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
         return loss
-    
+    def validation_step(self, batch, batch_idx):
+        """ 
+        validation_step method defines a single iteration in the validation loop. 
+        """
+
+        # The LightningModule knows what device it is on - you can reference via `self.device`
+        (image, question_encodings, answers) = batch
+        
+        # get predictions using forward method 
+        preds = self(image, question_encodings)
+        
+        # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
+        _, labels = torch.max(answers, dim=1)
+
+        # compute CE loss
+        loss = self.criterion(preds, labels)
+        
+        # logging validation loss
+        self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+
+        return loss
     def configure_optimizers(self):
         """ 
         Configure our optimizers.
@@ -114,4 +143,46 @@ class OriginalVQA(pl.LightningModule):
         return optimizer
 
 if __name__ == "__main__":
-    pass
+    preprocess = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            transforms.Resize((224,224)),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # TODO find mean/std for train/val coco
+        ])
+    
+    # initialize training and validation dataset
+    train_dataset = VQA(
+        train_annFile,
+        train_quesFile,
+        train_imgDir,
+        transform=preprocess
+        ) 
+    val_dataset = VQA(
+        val_annFile,
+        val_quesFile,
+        val_imgDir,
+        transform=preprocess
+        ) 
+    
+    train_dataloader = DataLoader(
+    	train_dataset,
+    	batch_size=batch_size, 
+    	shuffle=shuffle, 
+    	num_workers=num_workers,
+        collate_fn=vqa_collate
+	)
+    
+    val_dataloader = DataLoader(
+    	val_dataset,
+    	batch_size=batch_size, 
+    	shuffle=False,  # set False for validation dataloader
+    	num_workers=num_workers,
+        collate_fn=vqa_collate
+	)
+
+    model = OriginalVQA(
+        question_vocab_size=VQA.questions_vocabulary.size,
+        ans_vocab_size=VQA.answers_vocabulary.size
+        )
+
+    train(model, train_dataloader, val_dataloader, epochs)
