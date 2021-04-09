@@ -49,6 +49,9 @@ class SimpleBaselineVQA(pl.LightningModule):
         weights_init(self.embed_questions)
         weights_init(self.fc2)
 
+        # save hyperparameters
+        self.save_hyperparameters()
+
     def forward(self, image, question_encodings):
         """ 
         Since we are using Pytorch Lightning, the forward method defines how the LightningModule behaves during inference/prediction. 
