@@ -35,13 +35,13 @@ class OriginalVQA(pl.LightningModule):
         # lstm
         self.word2vec = nn.Embedding(question_vocab_size, word_embed_size)
         self.tanh = nn.Tanh()
-        self.lstm = nn.LSTM(word_embed_size, hidden_size, num_layers)
-        self.fc_questions = nn.Linear(2*num_layers*hidden_size, embed_size)
+        self.lstm = nn.LSTM(word_embed_size, hidden_size, num_layers, batch_first=True)
+        self.fc_questions = nn.Linear(2*num_layers*hidden_size, embed_size//2)
 
         # vqa model
         self.fc1 = nn.Linear(embed_size, ans_vocab_size)
         self.fc2 = nn.Linear(ans_vocab_size, ans_vocab_size)
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=1)
         self.leaky_relu = nn.LeakyReLU()
 
         self.dropout = nn.Dropout(0.2)
@@ -69,18 +69,19 @@ class OriginalVQA(pl.LightningModule):
         # img_feature = torch.div(img_feature, l2_norm)
         
         # lstm
-        question_vector = self.word2vec(question)                             
+        question_vector = self.word2vec(question.int())
         question_vector = self.tanh(question_vector)
-        question_vector = question_vector.transpose(0, 1)                             
-        _, (hidden, cell) = self.lstm(question_vector)                        
-        question_features = torch.cat((hidden, cell), 2)                    
-        question_features = question_features.transpose(0, 1)                     
+        # question_vector = question_vector.transpose(0, 1)
+        _, (hidden, cell) = self.lstm(question_vector)
+        question_features = torch.cat((hidden, cell), 2)
+        # Still need to transpose here since only the output of the LSTM has batch first, not the hidden or cell
+        question_features = question_features.transpose(0, 1) 
         question_features = question_features.reshape(question_features.size()[0], -1)  
         question_features = self.tanh(question_features)
-        question_features = self.fc_questions(question_features)                            
+        question_features = self.fc_questions(question_features)
     
         # concatenate features        
-        combined_features = torch.cat((img_features, question_features), 1)
+        combined_feature = torch.cat((img_features, question_features), 1)
         combined_feature = self.tanh(combined_feature)
         combined_feature = self.dropout(combined_feature)
         combined_feature = self.fc1(combined_feature)       
