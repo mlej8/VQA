@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 
 from pytorch_lightning.utilities.seed import seed_everything
+from skimage.feature.tests.test_orb import img
 
 from pretrained import initialize_model
 from datetime import datetime
@@ -22,8 +23,9 @@ import torchvision.transforms as transforms
 
 from vqa import VQA, vqa_collate
 
-# setting the seed for reproducability (it is important to set seed when using DPP mode)
+# setting the seed for reproducibility (it is important to set seed when using DPP mode)
 seed_everything(7)
+
 
 class SimpleBaselineVQA(pl.LightningModule):
     """
@@ -33,8 +35,8 @@ class SimpleBaselineVQA(pl.LightningModule):
         super(SimpleBaselineVQA, self).__init__()
         
         # the output size of Imagenet is 1000 and we want to resize it to 1024
-        self.googlenet, self.input_size = initialize_model("googlenet", hidden_size, True, use_pretrained=True) # TODO try feature extracting vs finetuning
-        self.fc_questions = nn.Linear(questions_vocab_size, hidden_size)
+        self.googlenet, self.input_size = initialize_model("googlenet", hidden_size, True, use_pretrained=True)  #TODO: try feature extracting vs finetuning
+        self.embed_questions = nn.Embedding(questions_vocab_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size*2, answers_vocab_size)
         
         # using negative log likelihood as loss
@@ -43,9 +45,9 @@ class SimpleBaselineVQA(pl.LightningModule):
         # activation
         self.leaky_relu = nn.LeakyReLU()
 
-        # initialize parameters for fc layers
+        # initialize parameters
+        weights_init(self.embed_questions)
         weights_init(self.fc2)
-        weights_init(self.fc_questions)
 
     def forward(self, image, question_encodings):
         """ 
@@ -55,16 +57,18 @@ class SimpleBaselineVQA(pl.LightningModule):
         img_feat = self.leaky_relu(self.googlenet(image))
 
         # getting language features
-        ques_features = self.leaky_relu(self.fc_questions(question_encodings))
+        ques_features = self.embed_questions(question_encodings)
 
-        # concatenate features        
+        # concatenate features
+        print(f"Image features of shape {img_feat.shape}: {img_feat}")
+        print(f"Questions features of shape {ques_features.shape}: {ques_features}")
         features = torch.cat((img_feat, ques_features), 1)
 
         # one fully connected layer
         output = self.fc2(features)
 
         return F.softmax(output, dim=1)
-    
+
     def training_step(self, batch, batch_idx):
         """ 
         training_step method defines a single iteration in the training loop. 
@@ -75,13 +79,13 @@ class SimpleBaselineVQA(pl.LightningModule):
 
         # get predictions using forward method 
         preds = self(image, question_encodings)
-        
+
         # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
         _, labels = torch.max(answers, dim=1)
 
         # compute CE loss
         loss = self.criterion(preds, labels)
-        
+
         # logging training loss
         self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
@@ -94,21 +98,21 @@ class SimpleBaselineVQA(pl.LightningModule):
 
         # The LightningModule knows what device it is on - you can reference via `self.device`
         (image, question_encodings, answers) = batch
-        
+
         # get predictions using forward method 
         preds = self(image, question_encodings)
-        
+
         # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
         _, labels = torch.max(answers, dim=1)
 
         # compute CE loss
         loss = self.criterion(preds, labels)
-        
+
         # logging validation loss
         self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
         return loss
-    
+
     def configure_optimizers(self):
         """ 
         Configure our optimizers.
@@ -118,47 +122,49 @@ class SimpleBaselineVQA(pl.LightningModule):
 
         return optimizer
 
+
 if __name__ == "__main__":
     preprocess = transforms.Compose(
         [
             transforms.ToTensor(),
-            transforms.Resize((224,224)),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # TODO find mean/std for train/val coco
+            transforms.Resize((224, 224)),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            # TODO find mean/std for train/val coco
         ])
-    
+
     # initialize training and validation dataset
     train_dataset = VQA(
         train_annFile,
         train_quesFile,
         train_imgDir,
         transform=preprocess
-        ) 
+    )
     val_dataset = VQA(
         val_annFile,
         val_quesFile,
         val_imgDir,
         transform=preprocess
-        ) 
-    
+    )
+
     train_dataloader = DataLoader(
-    	train_dataset,
-    	batch_size=batch_size, 
-    	shuffle=shuffle, 
-    	num_workers=num_workers,
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
         collate_fn=vqa_collate
-	)
-    
+    )
+
     val_dataloader = DataLoader(
-    	val_dataset,
-    	batch_size=batch_size, 
-    	shuffle=False,  # set False for validation dataloader
-    	num_workers=num_workers,
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,  # set False for validation dataloader
+        num_workers=num_workers,
         collate_fn=vqa_collate
-	)
+    )
 
     model = SimpleBaselineVQA(
         questions_vocab_size=VQA.questions_vocabulary.size,
         answers_vocab_size=VQA.answers_vocabulary.size
-        )
+    )
 
     train(model, train_dataloader, val_dataloader, epochs)

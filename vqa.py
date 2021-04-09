@@ -1,6 +1,7 @@
 import torch
 from torch.utils.data import DataLoader, Dataset
 import torchvision.transforms as transforms
+from torch.nn.utils.rnn import pad_sequence
 
 from PIL import Image
 
@@ -152,11 +153,9 @@ class VQA(Dataset):
 		param: question (String): question string
 		return: question in bag of words vector 
 		"""
-		bag_of_words = torch.zeros(self.questions_vocabulary.size)
 		words = preprocess_question_sentence(question)
-		for word in words:
-			bag_of_words[self.questions_vocabulary.word2idx(word)] += 1
-		return bag_of_words
+		indices = [self.questions_vocabulary.word2idx(word) for word in words]
+		return indices
 		
 
 	def preprocess_answer(self, answer):
@@ -285,9 +284,11 @@ class VQA(Dataset):
 		res.create_index()
 		return res
 
+
 def vqa_collate(batch):
-	""" Custom collate function for dataloader to filter out bad samples from Weather Dataset """
+	""" Custom collate function for dataloader """
 	images = torch.stack([item[0] for item in batch]).float()
-	questions = torch.stack([item[1] for item in batch]).float()
+	# questions = torch.stack([item[1] for item in batch]).float()
+	questions = pad_sequence([torch.tensor(item[1]).to(torch.int64) for item in batch], padding_value=0, batch_first=True)  # <pad> token has index 0 in questions_vocabulary
 	answers = torch.stack([item[2] for item in batch]).float()
-	return (images, questions, answers)
+	return images, questions, answers
