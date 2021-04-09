@@ -66,7 +66,7 @@ class OriginalVQA(pl.LightningModule):
         # img_feature = torch.div(img_feature, l2_norm)
         
         # lstm
-        question_vector = self.word2vec(question)                             
+        question_vector = self.word2vec(question.int())                             
         question_vector = self.tanh(question_vector)
         question_vector = question_vector.transpose(0, 1)                             
         _, (hidden, cell) = self.lstm(question_vector)                        
@@ -108,6 +108,7 @@ class OriginalVQA(pl.LightningModule):
         self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
 
         return loss
+    
     def validation_step(self, batch, batch_idx):
         """ 
         validation_step method defines a single iteration in the validation loop. 

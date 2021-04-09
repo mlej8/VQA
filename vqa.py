@@ -152,11 +152,14 @@ class VQA(Dataset):
 		param: question (String): question string
 		return: question in bag of words vector 
 		"""
-		bag_of_words = torch.zeros(self.questions_vocabulary.size)
+		encode = torch.zeros((self.max_question_length,self.questions_vocabulary.size)).type(torch.FloatTensor)
 		words = preprocess_question_sentence(question)
-		for word in words:
-			bag_of_words[self.questions_vocabulary.word2idx(word)] += 1
-		return bag_of_words
+		for i,word in enumerate(words):
+			if i >= self.max_question_length: 
+				break
+			if word in self.questions_vocabulary.word2idx_dict.keys():
+				encode[i, self.questions_vocabulary.word2idx(word)] = 1
+		return encode
 		
 
 	def preprocess_answer(self, answer):
@@ -165,9 +168,10 @@ class VQA(Dataset):
 		vocab (dict): vocabulary
 		return: answer in one-hot vector 
 		"""
-		one_hot = torch.zeros(self.answers_vocabulary.size)
-		one_hot[self.answers_vocabulary.word2idx(answer)] = 1
-		return one_hot
+		idx = self.answers_vocabulary.size
+		if answer in self.answers_vocabulary.word2idx_dict.keys():
+			idx = self.answers_vocabulary.word2idx(answer)
+		return idx
 
 	def info(self):
 		"""
@@ -289,5 +293,5 @@ def vqa_collate(batch):
 	""" Custom collate function for dataloader to filter out bad samples from Weather Dataset """
 	images = torch.stack([item[0] for item in batch]).float()
 	questions = torch.stack([item[1] for item in batch]).float()
-	answers = torch.stack([item[2] for item in batch]).float()
+	answers = torch.stack([torch.tensor([item[2]]) for item in batch]).long()
 	return (images, questions, answers)

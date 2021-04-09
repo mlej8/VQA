@@ -51,11 +51,13 @@ class SimpleBaselineVQA(pl.LightningModule):
         """ 
         Since we are using Pytorch Lightning, the forward method defines how the LightningModule behaves during inference/prediction. 
         """
+        question_encodings = torch.max(question_encodings, 1)[0]
+
         # getting visual features
-        img_feat = self.leaky_relu(self.googlenet(image))
+        img_feat = self.googlenet(image)
 
         # getting language features
-        ques_features = self.leaky_relu(self.fc_questions(question_encodings))
+        ques_features = self.fc_questions(question_encodings)
 
         # concatenate features        
         features = torch.cat((img_feat, ques_features), 1)
@@ -64,7 +66,7 @@ class SimpleBaselineVQA(pl.LightningModule):
         output = self.fc2(features)
 
         return F.softmax(output, dim=1)
-    
+
     def training_step(self, batch, batch_idx):
         """ 
         training_step method defines a single iteration in the training loop. 
@@ -77,10 +79,10 @@ class SimpleBaselineVQA(pl.LightningModule):
         preds = self(image, question_encodings)
         
         # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
-        _, labels = torch.max(answers, dim=1)
+        # _, labels = torch.max(answers, dim=1)
 
         # compute CE loss
-        loss = self.criterion(preds, labels)
+        loss = self.criterion(preds, answers)
         
         # logging training loss
         self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
@@ -99,10 +101,10 @@ class SimpleBaselineVQA(pl.LightningModule):
         preds = self(image, question_encodings)
         
         # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
-        _, labels = torch.max(answers, dim=1)
+        # _, labels = torch.max(answers, dim=1)
 
         # compute CE loss
-        loss = self.criterion(preds, labels)
+        loss = self.criterion(preds, answers)
         
         # logging validation loss
         self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)

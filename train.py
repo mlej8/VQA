@@ -52,6 +52,7 @@ def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs
     PATH = folder + '/result'
     with open(PATH, "w") as f:
         f.write(f"Model: {str(model)}\n")
+        # TODO: log all metrics stored by logger
         f.write(f"Lowest training loss: {str(min(logger.get_metric('train_loss')))}\n")
         f.write(f"Lowest validation loss: {str(min(logger.get_metric('val_loss')))}\n")
 
