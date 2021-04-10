@@ -31,13 +31,15 @@ class SimpleBaselineVQA(pl.LightningModule):
     """
     Predicts an answer to a question about an image using the Simple Baseline for Visual Question Answering paper (Zhou et al, 2017).
     """
-    def __init__(self, questions_vocab_size, answers_vocab_size=1000, hidden_size=1024):
+    def __init__(self, questions_vocab_size, answers_vocab_size=1000, hidden_size=1024, word_embeddings_size=300):
         super(SimpleBaselineVQA, self).__init__()
         
         # the output size of Imagenet is 1000 and we want to resize it to 1024
         self.googlenet, self.input_size = initialize_model("googlenet", hidden_size, True, use_pretrained=True)  #TODO: try feature extracting vs finetuning
-        self.embed_questions = nn.Embedding(questions_vocab_size, hidden_size, padding_idx=VQA.questions_vocabulary.word2idx(Vocabulary.PAD_TOKEN))
-        self.fc2 = nn.Linear(hidden_size*2, answers_vocab_size)
+        self.embed_questions = nn.Embedding(questions_vocab_size, word_embeddings_size, padding_idx=VQA.questions_vocabulary.word2idx(Vocabulary.PAD_TOKEN))
+        self.fc = nn.Linear(word_embeddings_size, hidden_size)
+        self.fc2 = nn.Linear(2*hidden_size, answers_vocab_size)
+        self.dropout = nn.Dropout(0.5)
         
         # using negative log likelihood as loss
         self.criterion = nn.CrossEntropyLoss()
@@ -47,6 +49,7 @@ class SimpleBaselineVQA(pl.LightningModule):
 
         # initialize parameters
         weights_init(self.embed_questions)
+        weights_init(self.fc)
         weights_init(self.fc2)
 
         # save hyperparameters
@@ -60,10 +63,13 @@ class SimpleBaselineVQA(pl.LightningModule):
         img_feat = self.leaky_relu(self.googlenet(image))
 
         # getting language features
-        word_embeddings = self.embed_questions(question_indices) 
+        word_embeddings = self.leaky_relu(self.embed_questions(question_indices))
 
         # get embedding for question using average  # TODO: try sum vs average of word embeddings 
         ques_features = torch.mean(word_embeddings, dim=1)
+        
+        # fully connected layer taking word embeddings
+        ques_features = self.leaky_relu(self.fc(ques_features))
 
         # concatenate features
         features = torch.cat((img_feat, ques_features), 1)
