@@ -114,7 +114,7 @@ class OriginalVQA(pl.LightningModule):
         logits = self.fc2(combined_feature)
 
         # softmax layer to obtain a distribution over K answers
-        return self.softmax(logits)
+        return logits
 
     def training_step(self, batch, batch_idx):
         """ 
