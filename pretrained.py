@@ -155,8 +155,7 @@ def initialize_model(model_name, num_classes, feature_extract, use_pretrained=Tr
     Then, when we initialize the new layer and by default the new parameters have .requires_grad=True so only the new layer's parameters will be updated. 
     When we are finetuning we can leave all of the .required_grad's set to the default of True.
     """
-    # Initialize these variables which will be set in this if statement. Each of these
-    #   variables is model specific.
+    # Initialize these variables which will be set in this if statement. Each of these variables is model specific.
     model_ft = None
     input_size = 0
 

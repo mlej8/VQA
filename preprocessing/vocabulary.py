@@ -1,5 +1,6 @@
 class Vocabulary:
 
+    PAD_TOKEN = "<pad>"
     UNKNOWN_TOKEN = "<unk>"
     
     def __init__(self, vocabulary_file):
@@ -15,7 +16,7 @@ class Vocabulary:
         return self.words[index]
     
     def word2idx(self, word):
-        if self.word2idx_dict.get(word):
+        if self.word2idx_dict.get(word) is not None:
             return self.word2idx_dict[word]
         else:
             return self.word2idx_dict[self.UNKNOWN_TOKEN]

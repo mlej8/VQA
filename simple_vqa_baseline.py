@@ -6,7 +6,6 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 
 from pytorch_lightning.utilities.seed import seed_everything
-from skimage.feature.tests.test_orb import img
 
 from pretrained import initialize_model
 from datetime import datetime
@@ -21,7 +20,8 @@ from train import train
 from torch.utils.data import DataLoader
 import torchvision.transforms as transforms
 
-from vqa import VQA, vqa_collate
+from vqa import VQA
+from preprocessing.vocabulary import Vocabulary
 
 # setting the seed for reproducibility (it is important to set seed when using DPP mode)
 seed_everything(7)
@@ -36,7 +36,7 @@ class SimpleBaselineVQA(pl.LightningModule):
         
         # the output size of Imagenet is 1000 and we want to resize it to 1024
         self.googlenet, self.input_size = initialize_model("googlenet", hidden_size, True, use_pretrained=True)  #TODO: try feature extracting vs finetuning
-        self.embed_questions = nn.Embedding(questions_vocab_size, hidden_size)
+        self.embed_questions = nn.Embedding(questions_vocab_size, hidden_size, padding_idx=VQA.questions_vocabulary.word2idx(Vocabulary.PAD_TOKEN))
         self.fc2 = nn.Linear(hidden_size*2, answers_vocab_size)
         
         # using negative log likelihood as loss
@@ -52,7 +52,7 @@ class SimpleBaselineVQA(pl.LightningModule):
         # save hyperparameters
         self.save_hyperparameters()
 
-    def forward(self, image, question_encodings):
+    def forward(self, image, question_indices):
         """ 
         Since we are using Pytorch Lightning, the forward method defines how the LightningModule behaves during inference/prediction. 
         """
@@ -60,11 +60,12 @@ class SimpleBaselineVQA(pl.LightningModule):
         img_feat = self.leaky_relu(self.googlenet(image))
 
         # getting language features
-        ques_features = self.embed_questions(question_encodings)
+        word_embeddings = self.embed_questions(question_indices) 
+
+        # get embedding for question using average  # TODO: try sum vs average of word embeddings 
+        ques_features = torch.mean(word_embeddings, dim=1)
 
         # concatenate features
-        print(f"Image features of shape {img_feat.shape}: {img_feat}")
-        print(f"Questions features of shape {ques_features.shape}: {ques_features}")
         features = torch.cat((img_feat, ques_features), 1)
 
         # one fully connected layer
@@ -78,10 +79,10 @@ class SimpleBaselineVQA(pl.LightningModule):
         """
 
         # The LightningModule knows what device it is on - you can reference via `self.device`, it makes your models hardware agnostic (you can train on any number of GPUs spread out on differnet machines)
-        (image, question_encodings, answers) = batch
+        (image, question_indices, answers) = batch
 
         # get predictions using forward method 
-        preds = self(image, question_encodings)
+        preds = self(image, question_indices)
 
         # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
         _, labels = torch.max(answers, dim=1)
@@ -100,10 +101,10 @@ class SimpleBaselineVQA(pl.LightningModule):
         """
 
         # The LightningModule knows what device it is on - you can reference via `self.device`
-        (image, question_encodings, answers) = batch
+        (image, question_indices, answers) = batch
 
         # get predictions using forward method 
-        preds = self(image, question_encodings)
+        preds = self(image, question_indices)
 
         # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
         _, labels = torch.max(answers, dim=1)
@@ -154,7 +155,7 @@ if __name__ == "__main__":
         batch_size=batch_size,
         shuffle=shuffle,
         num_workers=num_workers,
-        collate_fn=vqa_collate
+        collate_fn=VQA.vqa_collate
     )
 
     val_dataloader = DataLoader(
@@ -162,7 +163,7 @@ if __name__ == "__main__":
         batch_size=batch_size,
         shuffle=False,  # set False for validation dataloader
         num_workers=num_workers,
-        collate_fn=vqa_collate
+        collate_fn=VQA.vqa_collate
     )
 
     model = SimpleBaselineVQA(
