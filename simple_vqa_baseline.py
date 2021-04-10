@@ -35,11 +35,10 @@ class SimpleBaselineVQA(pl.LightningModule):
         super(SimpleBaselineVQA, self).__init__()
         
         # the output size of Imagenet is 1000 and we want to resize it to 1024
-        self.googlenet, self.input_size = initialize_model("googlenet", hidden_size, True, use_pretrained=True)  #TODO: try feature extracting vs finetuning
+        self.googlenet, self.input_size = initialize_model("googlenet", hidden_size, feature_extract=True, use_pretrained=True)
         self.embed_questions = nn.Embedding(questions_vocab_size, word_embeddings_size, padding_idx=VQA.questions_vocabulary.word2idx(Vocabulary.PAD_TOKEN))
         self.fc = nn.Linear(word_embeddings_size, hidden_size)
         self.fc2 = nn.Linear(2*hidden_size, answers_vocab_size)
-        self.dropout = nn.Dropout(0.5)
         
         # using negative log likelihood as loss
         self.criterion = nn.CrossEntropyLoss()
@@ -63,7 +62,7 @@ class SimpleBaselineVQA(pl.LightningModule):
         img_feat = self.leaky_relu(self.googlenet(image))
 
         # getting language features
-        word_embeddings = self.leaky_relu(self.embed_questions(question_indices))
+        word_embeddings = self.embed_questions(question_indices)
 
         # get embedding for question using average  # TODO: try sum vs average of word embeddings 
         ques_features = torch.mean(word_embeddings, dim=1)
@@ -75,9 +74,9 @@ class SimpleBaselineVQA(pl.LightningModule):
         features = torch.cat((img_feat, ques_features), 1)
 
         # one fully connected layer
-        output = self.fc2(features)
+        logits = self.fc2(features)
 
-        return F.softmax(output, dim=1)
+        return logits
 
     def training_step(self, batch, batch_idx):
         """ 
@@ -131,7 +130,6 @@ class SimpleBaselineVQA(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
 
         return optimizer
-
 
 if __name__ == "__main__":
     preprocess = transforms.Compose(
