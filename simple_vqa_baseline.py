@@ -70,7 +70,7 @@ class SimpleBaselineVQA(pl.LightningModule):
         # fully connected layer taking word embeddings
         ques_features = self.leaky_relu(self.fc(ques_features))
 
-        # concatenate features
+        # concatenate features TODO: investigate concatenation vs element-wise multiplication
         features = torch.cat((img_feat, ques_features), 1)
 
         # one fully connected layer
