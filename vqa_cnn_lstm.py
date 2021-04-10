@@ -60,7 +60,7 @@ class OriginalVQA(pl.LightningModule):
         self.fc2 = nn.Linear(ans_vocab_size, ans_vocab_size)
 
         # activation funcitons
-        self.tanh = nn.Tanh()
+        self.leaky_relu = nn.LeakyReLU()
         self.softmax = nn.Softmax(dim=1)
         self.dropout = nn.Dropout(0.5)
         
@@ -89,10 +89,10 @@ class OriginalVQA(pl.LightningModule):
         img_features = torch.div(img_features, l2_norm)
 
         # fully connected layer for image 
-        img_features = self.tanh(self.fc_image(img_features))
+        img_features = self.leaky_relu(self.fc_image(img_features))
         
         # each question word is encoded with (Linear, Dropout(0.5), Tanh)
-        question_embeddings = self.tanh(self.word2vec(question_indices))
+        question_embeddings = self.leaky_relu(self.word2vec(question_indices))
         
         # question embedding obtained from the LSTM is a concatenation of last cell state and last hidden state representations from each of the hidden layers
         _, (hidden, cell) = self.lstm(question_embeddings)
@@ -102,14 +102,14 @@ class OriginalVQA(pl.LightningModule):
 
         # transpose since output of the LSTM has batch on second dimension
         question_features = torch.transpose(question_features, 0, 1).reshape(question_embeddings.size(0), -1)
-        question_features = self.tanh(self.fc_questions(question_features))
+        question_features = self.leaky_relu(self.fc_questions(question_features))
     
         # point-wise multiplication
         combined_feature = torch.mul(img_features, question_features)
 
         # a fully connected neural network classifier with 2 hidden layers and 1000 hidden units (dropout 0.5) in each layer with tanh non-linearity
         combined_feature = self.fc1(combined_feature)       
-        combined_feature = self.tanh(combined_feature)
+        combined_feature = self.leaky_relu(combined_feature)
         combined_feature = self.dropout(combined_feature)
         logits = self.fc2(combined_feature)
 
