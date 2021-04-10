@@ -28,6 +28,18 @@ class VQA(Dataset):
 
 	# question vocabulary
 	questions_vocabulary = Vocabulary(q_vocab_path)
+
+	# get max question length
+	with open(questions_stats_path, "r") as f:
+		max_question_length = json.load(f)["max_question_length"]
+
+	@classmethod
+	def vqa_collate(cls, batch):
+		""" Custom collate function for dataloader """
+		images = torch.stack([item[0] for item in batch]).float()
+		questions_indices = torch.stack([item[1] for item in batch]) # indices need to be int
+		answers = torch.stack([item[2] for item in batch]).float()
+		return images, questions_indices, answers
 	
 	def __init__(self, 
 				annotation_file: str, 
@@ -47,9 +59,6 @@ class VQA(Dataset):
 		"""
 		# TODO find captions for MSCOCO
 		# TODO group questions by answer_type
-		
-		with open(questions_stats_path, "r") as f:
-			self.max_question_length = json.load(f)["max_question_length"]
 
 		# load dataset
 		logger.info('Loading VQA annotations and questions into memory...')
@@ -153,10 +162,11 @@ class VQA(Dataset):
 		param: question (String): question string
 		return: question in bag of words vector 
 		"""
+		indices = torch.empty(self.max_question_length, dtype=int).fill_(self.questions_vocabulary.word2idx(Vocabulary.PAD_TOKEN))
 		words = preprocess_question_sentence(question)
-		indices = [self.questions_vocabulary.word2idx(word) for word in words]
+		for i, word in enumerate(words):
+			indices[i] = self.questions_vocabulary.word2idx(word)
 		return indices
-		
 
 	def preprocess_answer(self, answer):
 		""" 
@@ -283,12 +293,3 @@ class VQA(Dataset):
 		res.annotations['annotations'] = anns
 		res.create_index()
 		return res
-
-
-def vqa_collate(batch):
-	""" Custom collate function for dataloader """
-	images = torch.stack([item[0] for item in batch]).float()
-	# questions = torch.stack([item[1] for item in batch]).float()
-	questions = pad_sequence([torch.tensor(item[1]).to(torch.int64) for item in batch], padding_value=0, batch_first=True)  # <pad> token has index 0 in questions_vocabulary
-	answers = torch.stack([item[2] for item in batch]).float()
-	return images, questions, answers
