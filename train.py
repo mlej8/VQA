@@ -52,14 +52,14 @@ def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs
     PATH = folder + '/result'
     with open(PATH, "w") as f:
         f.write(f"Model: {str(model)}\n")
-        f.write(f"Lowest training loss: {str(min(logger.get_metric('train_loss')))}\n")
-        f.write(f"Lowest validation loss: {str(min(logger.get_metric('val_loss')))}\n")
+        # f.write(f"Lowest training loss: {str(min(logger.get_metric('train_loss')))}\n")
+        # f.write(f"Lowest validation loss: {str(min(logger.get_metric('val_loss')))}\n")
 
     # plot training vs validation loss
-    plt.plot(range(len(logger.get_metric('train_loss'))), logger.get_metric('train_loss'), lw=2, label='Training Loss')
-    plt.plot(range(len(logger.get_metric('val_loss'))), logger.get_metric('val_loss'), lw=2, label='Validation Loss')
-    plt.legend()
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.savefig(folder + f"/{type(model).__name__}_training_validation_loss.png")
-    plt.show()
+    # plt.plot(range(len(logger.get_metric('train_loss'))), logger.get_metric('train_loss'), lw=2, label='Training Loss')
+    # plt.plot(range(len(logger.get_metric('val_loss'))), logger.get_metric('val_loss'), lw=2, label='Validation Loss')
+    # plt.legend()
+    # plt.xlabel('Epoch')
+    # plt.ylabel('Loss')
+    # plt.savefig(folder + f"/{type(model).__name__}_training_validation_loss.png")
+    # plt.show()
