@@ -15,6 +15,14 @@ def weights_init(layer):
 
     if isinstance(layer, torch.nn.Embedding):
         torch.nn.init.xavier_uniform_(layer.weight.data)
+    
+    if isinstance(layer, torch.nn.LSTM):
+        for name, param in layer.named_parameters():
+            if param.requires_grad:
+                if "weight" in name:
+                    torch.nn.init.xavier_uniform_(param)
+                elif "bias" in name:
+                    torch.nn.init.constant(param, 0)
 
     if isinstance(layer, torch.nn.ConvTranspose2d):
         torch.nn.init.xavier_uniform_(layer.weight.data)
