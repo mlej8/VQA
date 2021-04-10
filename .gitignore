@@ -135,6 +135,7 @@ Images/
 datasets
 logs/
 vqa-env/
+vqa/
 config.py
 
 # user settings
