@@ -17,7 +17,8 @@ from utils import weights_init
 
 from params.vqa_cnn_lstm import *
 
-from vqa import VQA, vqa_collate
+from vqa import VQA
+from preprocessing.vocabulary import Vocabulary
 
 # setting the seed for reproducability (it is important to set seed when using DPP mode)
 seed_everything(7)
@@ -33,7 +34,7 @@ class OriginalVQA(pl.LightningModule):
         self.cnn, self.input_size = initialize_model("vgg19", 1024, True, use_pretrained=True) # TODO question: are we feature extracting or finetuning ? we can try both.. we are doing feature extract for the moment (e.g. not updating params of pretrained network) but might be useful to try finetuning should get better results
         
         # lstm
-        self.word2vec = nn.Embedding(question_vocab_size, word_embed_size)
+        self.word2vec = nn.Embedding(question_vocab_size, word_embed_size, padding_idx=VQA.questions_vocabulary.word2idx(Vocabulary.PAD_TOKEN))
         self.tanh = nn.Tanh()
         self.lstm = nn.LSTM(word_embed_size, hidden_size, num_layers)
         self.fc_questions = nn.Linear(2*num_layers*hidden_size, embed_size)
@@ -96,10 +97,10 @@ class OriginalVQA(pl.LightningModule):
         """
 
         # The LightningModule knows what device it is on - you can reference via `self.device`, it makes your models hardware agnostic (you can train on any number of GPUs spread out on differnet machines)
-        (image, question_encodings, answers) = batch
+        (image, question_indices, answers) = batch
         
         # get predictions using forward method 
-        preds = self(image, question_encodings)
+        preds = self(image, question_indices)
         
         # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
         _, labels = torch.max(answers, dim=1)
@@ -117,10 +118,10 @@ class OriginalVQA(pl.LightningModule):
         """
 
         # The LightningModule knows what device it is on - you can reference via `self.device`
-        (image, question_encodings, answers) = batch
+        (image, question_indices, answers) = batch
         
         # get predictions using forward method 
-        preds = self(image, question_encodings)
+        preds = self(image, question_indices)
         
         # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
         _, labels = torch.max(answers, dim=1)
@@ -169,7 +170,7 @@ if __name__ == "__main__":
     	batch_size=batch_size, 
     	shuffle=shuffle, 
     	num_workers=num_workers,
-        collate_fn=vqa_collate
+        collate_fn=VQA.vqa_collate
 	)
     
     val_dataloader = DataLoader(
@@ -177,7 +178,7 @@ if __name__ == "__main__":
     	batch_size=batch_size, 
     	shuffle=False,  # set False for validation dataloader
     	num_workers=num_workers,
-        collate_fn=vqa_collate
+        collate_fn=VQA.vqa_collate
 	)
 
     model = OriginalVQA(
