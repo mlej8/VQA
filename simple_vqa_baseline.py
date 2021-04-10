@@ -65,7 +65,7 @@ class SimpleBaselineVQA(pl.LightningModule):
         # one fully connected layer
         output = self.fc2(features)
 
-        return F.softmax(output, dim=1)
+        return output
 
     def training_step(self, batch, batch_idx):
         """ 
@@ -79,10 +79,10 @@ class SimpleBaselineVQA(pl.LightningModule):
         preds = self(image, question_encodings)
         
         # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
-        # _, labels = torch.max(answers, dim=1)
+        _, labels = torch.max(answers, dim=1)
 
         # compute CE loss
-        loss = self.criterion(preds, answers)
+        loss = self.criterion(preds, labels)
         
         # logging training loss
         self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
@@ -99,12 +99,13 @@ class SimpleBaselineVQA(pl.LightningModule):
         
         # get predictions using forward method 
         preds = self(image, question_encodings)
-        
+
         # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
-        # _, labels = torch.max(answers, dim=1)
+        _, labels = torch.max(answers, dim=1)
 
         # compute CE loss
-        loss = self.criterion(preds, answers)
+        
+        loss = self.criterion(preds, labels)
         
         # logging validation loss
         self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)

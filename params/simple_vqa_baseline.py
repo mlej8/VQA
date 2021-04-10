@@ -30,5 +30,5 @@ weightClip_wordembed = 1500
 weightClip_other = 20
 
 # dataloader settings
-num_workers = 8
+num_workers = 0
 shuffle = True

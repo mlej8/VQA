@@ -135,6 +135,7 @@ Images/
 datasets
 logs/
 vqa-env/
+config.py
 
 # user settings
 .vscode/
