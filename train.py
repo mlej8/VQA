@@ -15,7 +15,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs: int, patience:int = 10):
     # create folder for each run
-    folder = "models/{}".format(datetime.now().strftime("%b-%d-%H-%M-%S"))
+    folder = "models/{}/{}".format(type(model).__name__, datetime.now().strftime("%b-%d-%H-%M-%S"))
     if not os.path.exists(folder):
         os.makedirs(folder)
 
@@ -31,7 +31,7 @@ def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs
     checkpoint_callback = ModelCheckpoint(monitor='val_loss')
 
     logger = loggers.CometLogger( 
-            save_dir="logs/",
+            save_dir=folder,
             workspace="vqa",
             project_name=f"{type(model).__name__}", 
             experiment_name=f"{type(model).__name__}_{datetime.now().strftime('%b_%d_%H_%M_%S')}"
