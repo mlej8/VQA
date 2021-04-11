@@ -167,8 +167,9 @@ class OriginalVQA(pl.LightningModule):
         """
         # creating optimizer for our model
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
+        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "train_loss"}
 
-        return optimizer
 
 if __name__ == "__main__":
     preprocess = transforms.Compose(
