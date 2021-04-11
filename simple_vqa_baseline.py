@@ -29,6 +29,7 @@ from pretrained import set_parameter_requires_grad
 # setting the seed for reproducibility (it is important to set seed when using DPP mode)
 seed_everything(7)
 
+
 class SimpleBaselineVQA(pl.LightningModule):
     """
     Predicts an answer to a question about an image using the Simple Baseline for Visual Question Answering paper (Zhou et al, 2017).
@@ -165,14 +166,16 @@ class SimpleBaselineVQA(pl.LightningModule):
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, verbose=verbose, patience=patience, factor=factor)
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": monitored_loss}
 
+
+preprocess = transforms.Compose(
+    [
+        transforms.ToTensor(),
+        transforms.Resize((224, 224)),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        # TODO find mean/std for train/val coco
+    ])
+
 if __name__ == "__main__":
-    preprocess = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Resize((224, 224)),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            # TODO find mean/std for train/val coco
-        ])
 
     # initialize training and validation dataset
     train_dataset = VQA(
