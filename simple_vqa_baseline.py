@@ -38,8 +38,8 @@ class SimpleBaselineVQA(pl.LightningModule):
         self.googlenet, self.input_size = initialize_model("googlenet", hidden_size, feature_extract=True, use_pretrained=True)
         self.embed_questions = nn.Embedding(questions_vocab_size, word_embeddings_size, padding_idx=VQA.questions_vocabulary.word2idx(Vocabulary.PAD_TOKEN))
         self.fc = nn.Linear(word_embeddings_size, hidden_size)
-        self.fc2 = nn.Linear(2*hidden_size, answers_vocab_size)
-        
+        self.fc2 = nn.Linear(hidden_size, answers_vocab_size)
+        print("Multiplying Image and Text channels")
         # using negative log likelihood as loss
         self.criterion = nn.CrossEntropyLoss()
         
@@ -71,7 +71,7 @@ class SimpleBaselineVQA(pl.LightningModule):
         ques_features = self.leaky_relu(self.fc(ques_features))
 
         # concatenate features TODO: investigate concatenation vs element-wise multiplication
-        features = torch.cat((img_feat, ques_features), 1)
+        features = torch.mul(img_feat, ques_features)
 
         # one fully connected layer
         logits = self.fc2(features)
