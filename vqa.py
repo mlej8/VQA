@@ -42,9 +42,9 @@ class VQA(Dataset):
 		return images, questions_indices, answers
 	
 	def __init__(self, 
-				annotation_file: str, 
-				question_file: str, 
-				img_dir: str, 
+				annotation_file=None,
+				question_file=None,
+				img_dir=None,
 				transform=transforms.Compose([
 					transforms.ToTensor(),
 					transforms.Resize((224,224)),
@@ -63,39 +63,41 @@ class VQA(Dataset):
 		# load dataset
 		logger.info('Loading VQA annotations and questions into memory...')
 		time_t = datetime.datetime.utcnow()
-		self.annotations = json.load(open(annotation_file, 'r'))
-		self.questions = json.load(open(question_file, 'r'))
-		logger.info("Done in {}".format(datetime.datetime.utcnow() - time_t))
-			
-		# dictionary mapping question id to the annotation
-		self.question_annotation = {annotation['question_id']: [] for annotation in self.annotations['annotations']}
-		
-		# dictionary mapping question id to question
-		self.questions_id = {annotation['question_id']: [] for annotation in self.annotations['annotations']}
+		self.annotations = {}
+		if annotation_file is not None and question_file is not None and img_dir is not None:
+			self.annotations = json.load(open(annotation_file, 'r'))
+			self.questions = json.load(open(question_file, 'r'))
+			logger.info("Done in {}".format(datetime.datetime.utcnow() - time_t))
 
-		# dictionary mapping image id to its annotations
-		self.img2QA = {annotation['image_id']: [] for annotation in self.annotations['annotations']}
+			# dictionary mapping question id to the annotation
+			self.question_annotation = {annotation['question_id']: [] for annotation in self.annotations['annotations']}
 
-		# create index
-		self.create_index()
+			# dictionary mapping question id to question
+			self.questions_id = {annotation['question_id']: [] for annotation in self.annotations['annotations']}
 
-		# store an array of question ids for indexing
-		self.q_ids = list(self.questions_id.keys())
+			# dictionary mapping image id to its annotations
+			self.img2QA = {annotation['image_id']: [] for annotation in self.annotations['annotations']}
 
-		self.data_subtype = self.questions["data_subtype"]
-		self.task_type = self.questions["task_type"]
-		self.data_type = self.questions["data_type"]
-		self.transform = transform
-		self.img_dir = img_dir
+			# create index
+			self.create_index()
 
-		logger.info("Annotation file: %s", annotation_file)
-		logger.info("Question file: %s", question_file)
-		logger.info("Data type: %s", self.data_type)
-		logger.info("Data subtype: %s", self.data_subtype)
-		logger.info("Image directory: %s", img_dir)
-		logger.info("Task type: %s", self.task_type)
-		if transform:
-			logger.info("Transform: %s", transform)
+			# store an array of question ids for indexing
+			self.q_ids = list(self.questions_id.keys())
+
+			self.data_subtype = self.questions["data_subtype"]
+			self.task_type = self.questions["task_type"]
+			self.data_type = self.questions["data_type"]
+			self.transform = transform
+			self.img_dir = img_dir
+
+			logger.info("Annotation file: %s", annotation_file)
+			logger.info("Question file: %s", question_file)
+			logger.info("Data type: %s", self.data_type)
+			logger.info("Data subtype: %s", self.data_subtype)
+			logger.info("Image directory: %s", img_dir)
+			logger.info("Task type: %s", self.task_type)
+			if transform:
+				logger.info("Transform: %s", transform)
 
 	def create_index(self):
 		# create index
