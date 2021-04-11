@@ -19,37 +19,59 @@ from config import *
 from train import train
 
 from torch.utils.data import DataLoader
-import torchvision.transforms as transforms
+from torchvision import models, transforms
 
 from vqa import VQA
 from preprocessing.vocabulary import Vocabulary
 
+from pretrained import set_parameter_requires_grad
+
 # setting the seed for reproducibility (it is important to set seed when using DPP mode)
 seed_everything(7)
-
 
 class SimpleBaselineVQA(pl.LightningModule):
     """
     Predicts an answer to a question about an image using the Simple Baseline for Visual Question Answering paper (Zhou et al, 2017).
     """
-    def __init__(self, questions_vocab_size, answers_vocab_size=1000, hidden_size=1024, word_embeddings_size=300):
+    def __init__(self, questions_vocab_size, answers_vocab_size=1000, hidden_size=1024, word_embeddings_size=300, feature_extract=True, input_size=224):
         super(SimpleBaselineVQA, self).__init__()
         
-        # the output size of Imagenet is 1000 and we want to resize it to 1024
-        self.googlenet, self.input_size = initialize_model("googlenet", hidden_size, feature_extract=True, use_pretrained=True)
-        self.embed_questions = nn.Embedding(questions_vocab_size, word_embeddings_size, padding_idx=VQA.questions_vocabulary.word2idx(Vocabulary.PAD_TOKEN))
-        self.fc = nn.Linear(word_embeddings_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, answers_vocab_size)
-        print("Multiplying Image and Text channels")
+        # input size to CNN
+        self.input_size = input_size
+
+        # load pretrained cnn
+        self.cnn = models.vgg19(pretrained=True)
+        
+        # get size of last hidden layer of pretrained CNN
+        num_ftrs = self.cnn.classifier[-1].in_features
+
+        # remove last layer from CNN
+        self.cnn.classifier = torch.nn.Sequential(*list(self.cnn.classifier.children())[:-1])
+
+        # freeze all layers if using CNN as feature extractor
+        set_parameter_requires_grad(self.cnn, feature_extract)
+        
+        # linear layer for image channel
+        self.fc_image = nn.Linear(num_ftrs, hidden_size)  
+        
+        # question channel
+        self.word2vec = nn.Embedding(questions_vocab_size, word_embeddings_size, padding_idx=VQA.questions_vocabulary.word2idx(Vocabulary.PAD_TOKEN))
+        self.fc_questions = nn.Linear(word_embeddings_size, hidden_size)
+        self.fc1 = nn.Linear(hidden_size, answers_vocab_size)
+        self.fc2 = nn.Linear(answers_vocab_size, answers_vocab_size)
+        
         # using negative log likelihood as loss
         self.criterion = nn.CrossEntropyLoss()
         
         # activation
         self.leaky_relu = nn.LeakyReLU()
+        self.dropout = nn.Dropout(0.5)
 
         # initialize parameters
-        weights_init(self.embed_questions)
-        weights_init(self.fc)
+        weights_init(self.word2vec)
+        weights_init(self.fc_image)
+        weights_init(self.fc_questions)
+        weights_init(self.fc1)
         weights_init(self.fc2)
 
         # save hyperparameters
@@ -59,23 +81,33 @@ class SimpleBaselineVQA(pl.LightningModule):
         """ 
         Since we are using Pytorch Lightning, the forward method defines how the LightningModule behaves during inference/prediction. 
         """
-        # getting visual features
-        img_feat = self.leaky_relu(self.googlenet(image))
+        # getting visual features from last hidden layer of pretrained CNN
+        img_features = self.cnn(image)
+
+        # normalize output as per https://arxiv.org/pdf/1505.00468.pdf
+        l2_norm = torch.linalg.norm(img_features, ord=2, dim=1).reshape(-1,1)
+        img_features = torch.div(img_features, l2_norm)
+
+        # fully connected layer for image 
+        img_features = self.leaky_relu(self.fc_image(img_features))
 
         # getting word embeddings
-        word_embeddings = self.tanh(self.embed_questions(question_indices))
+        word_embeddings = self.tanh(self.word2vec(question_indices))
 
-        # get embedding for question using average  # TODO: try sum vs average of word embeddings 
+        # get embedding for question using average
         ques_features = torch.mean(word_embeddings, dim=1)
         
         # fully connected layer taking word embeddings
-        ques_features = self.leaky_relu(self.fc(ques_features))
+        ques_features = self.leaky_relu(self.fc_questions(ques_features))
 
         # concatenate features TODO: investigate concatenation vs element-wise multiplication
-        features = torch.mul(img_feat, ques_features)
+        combined_features = self.dropout(self.leaky_relu(torch.mul(img_features, ques_features)))
 
         # one fully connected layer
-        logits = self.fc2(features)
+        combined_feature = self.fc1(combined_feature)       
+        combined_feature = self.leaky_relu(combined_feature)
+        combined_feature = self.dropout(combined_feature)
+        logits = self.fc2(combined_feature)
 
         return logits
 
