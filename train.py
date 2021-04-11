@@ -11,9 +11,11 @@ from pytorch_lightning import loggers
 import torch
 from torch.utils.data import DataLoader
 
+from params.trainer import *
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs: int, patience:int = 10):
+def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs: int):
     # create folder for each run
     folder = "models/{}".format(datetime.now().strftime("%b-%d-%H-%M-%S"))
     if not os.path.exists(folder):

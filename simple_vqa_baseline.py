@@ -13,6 +13,7 @@ from datetime import datetime
 from utils import weights_init
 
 from params.simple_vqa_baseline import *
+from params.scheduler import *
 from config import *
 
 from train import train
@@ -128,8 +129,8 @@ class SimpleBaselineVQA(pl.LightningModule):
         """
         # creating optimizer for our model
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer)
-        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": "train_loss"}
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, verbose=verbose, patience=patience, factor=factor)
+        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": monitored_loss}
 
 if __name__ == "__main__":
     preprocess = transforms.Compose(
