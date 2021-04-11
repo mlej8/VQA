@@ -61,6 +61,7 @@ class OriginalVQA(pl.LightningModule):
 
         # activation funcitons
         self.leaky_relu = nn.LeakyReLU()
+        self.tanh = nn.Tanh()
         self.softmax = nn.Softmax(dim=1)
         self.dropout = nn.Dropout(0.5)
         
@@ -92,7 +93,7 @@ class OriginalVQA(pl.LightningModule):
         img_features = self.leaky_relu(self.fc_image(img_features))
         
         # each question word is encoded with (Linear, Dropout(0.5), Tanh)
-        question_embeddings = self.word2vec(question_indices)
+        question_embeddings = self.tanh(self.word2vec(question_indices))
         
         # question embedding obtained from the LSTM is a concatenation of last cell state and last hidden state representations from each of the hidden layers
         _, (hidden, cell) = self.lstm(question_embeddings)

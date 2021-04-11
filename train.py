@@ -64,3 +64,4 @@ def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs
     # plt.savefig(folder + f"/{type(model).__name__}_training_validation_loss.png")
     # plt.show()
     # TODO: add scheduler https://pytorch-lightning.readthedocs.io/en/latest/common/optimizers.html
+    # NOTE: if resuming training - https://pytorch-lightning.readthedocs.io/en/latest/common/weights_loading.html

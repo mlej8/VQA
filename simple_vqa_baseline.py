@@ -61,8 +61,8 @@ class SimpleBaselineVQA(pl.LightningModule):
         # getting visual features
         img_feat = self.leaky_relu(self.googlenet(image))
 
-        # getting language features
-        word_embeddings = self.embed_questions(question_indices)
+        # getting word embeddings
+        word_embeddings = self.tanh(self.embed_questions(question_indices))
 
         # get embedding for question using average  # TODO: try sum vs average of word embeddings 
         ques_features = torch.mean(word_embeddings, dim=1)
