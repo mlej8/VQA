@@ -65,6 +65,7 @@ class SimpleBaselineVQA(pl.LightningModule):
         
         # activation
         self.leaky_relu = nn.LeakyReLU()
+        self.tanh = nn.Tanh()
         self.dropout = nn.Dropout(0.5)
 
         # initialize parameters
