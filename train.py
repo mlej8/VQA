@@ -34,7 +34,6 @@ def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs
     checkpoint_callback = ModelCheckpoint(monitor='val_loss')
 
     logger = loggers.CometLogger( 
-            # api_key=comet_key,
             save_dir=folder,
             workspace=workspace,
             project_name=f"{type(model).__name__}", 

@@ -105,10 +105,10 @@ class SimpleBaselineVQA(pl.LightningModule):
         combined_features = self.dropout(self.leaky_relu(torch.mul(img_features, ques_features)))
 
         # one fully connected layer
-        combined_feature = self.fc1(combined_feature)       
-        combined_feature = self.leaky_relu(combined_feature)
-        combined_feature = self.dropout(combined_feature)
-        logits = self.fc2(combined_feature)
+        combined_features = self.fc1(combined_features)       
+        combined_features = self.leaky_relu(combined_features)
+        combined_features = self.dropout(combined_features)
+        logits = self.fc2(combined_features)
 
         return logits
 
