@@ -57,7 +57,7 @@ class SimpleBaselineVQA(pl.LightningModule):
         # question channel
         self.word2vec = nn.Embedding(questions_vocab_size, word_embeddings_size, padding_idx=VQA.questions_vocabulary.word2idx(Vocabulary.PAD_TOKEN))
         self.fc_questions = nn.Linear(word_embeddings_size, hidden_size)
-        self.fc1 = nn.Linear(hidden_size, answers_vocab_size)
+        self.fc1 = nn.Linear(2*hidden_size, answers_vocab_size)
         self.fc2 = nn.Linear(answers_vocab_size, answers_vocab_size)
         
         # using negative log likelihood as loss
@@ -102,7 +102,7 @@ class SimpleBaselineVQA(pl.LightningModule):
         ques_features = self.leaky_relu(self.fc_questions(ques_features))
 
         # concatenate features TODO: investigate concatenation vs element-wise multiplication
-        combined_features = self.dropout(self.leaky_relu(torch.mul(img_features, ques_features)))
+        combined_features = self.dropout(self.leaky_relu(torch.cat((img_features, ques_features), dim=1)))
 
         # one fully connected layer
         combined_features = self.fc1(combined_features)       

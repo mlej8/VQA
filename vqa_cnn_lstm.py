@@ -57,7 +57,7 @@ class OriginalVQA(pl.LightningModule):
         self.fc_questions = nn.Linear(2*num_layers*hidden_size, embed_size)
 
         # mlp
-        self.fc1 = nn.Linear(embed_size, ans_vocab_size)
+        self.fc1 = nn.Linear(2*embed_size, ans_vocab_size)
         self.fc2 = nn.Linear(ans_vocab_size, ans_vocab_size)
 
         # activation funcitons
@@ -106,7 +106,7 @@ class OriginalVQA(pl.LightningModule):
         question_features = self.leaky_relu(self.fc_questions(question_features))
     
         # point-wise multiplication
-        combined_feature = self.dropout(self.leaky_relu(torch.mul(img_features, question_features)))
+        combined_feature = self.dropout(self.leaky_relu(torch.cat((img_features, question_features), dim=1)))
 
         # a fully connected neural network classifier with 2 hidden layers and 1000 hidden units (dropout 0.5) in each layer with tanh non-linearity
         combined_feature = self.fc1(combined_feature)       
