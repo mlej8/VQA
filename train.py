@@ -12,6 +12,7 @@ import torch
 from torch.utils.data import DataLoader
 
 from params.trainer import *
+from params.comet import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -33,8 +34,9 @@ def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs
     checkpoint_callback = ModelCheckpoint(monitor='val_loss')
 
     logger = loggers.CometLogger( 
+            api_key=comet_key,
             save_dir=folder,
-            workspace="vqa",
+            workspace=workspace,
             project_name=f"{type(model).__name__}", 
             experiment_name=f"{type(model).__name__}_{datetime.now().strftime('%b_%d_%H_%M_%S')}"
         )
