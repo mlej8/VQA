@@ -1,17 +1,17 @@
 import sys
-
-
-dataDir = '../../VQA'
-sys.path.insert(0, '%s/PythonHelperTools/vqaTools' % (dataDir))
+import os
+os.chdir('../../VQA')
+# dataDir = '../../VQA'
+# sys.path.insert(0, '%s/PythonHelperTools/vqaTools' % (dataDir))
 from vqa import VQA
 from vqaEval import VQAEval
 import matplotlib.pyplot as plt
 import skimage.io as io
 import json
 import random
-import os
 
 # set up file names and paths
+dataDir = 'datasets'
 versionType = 'v2_'  # this should be '' when using VQA v2.0 dataset
 taskType = 'OpenEnded'  # 'OpenEnded' only for v2.0. 'OpenEnded' or 'MultipleChoice' for v1.0
 dataType = 'mscoco'  # 'mscoco' only for v1.0. 'mscoco' for real and 'abstract_v002' for abstract for v1.0.
@@ -22,14 +22,15 @@ imgDir = '%s/Images/%s/%s/' % (dataDir, dataType, dataSubType)
 resultType = 'fake'
 fileTypes = ['results', 'accuracy', 'evalQA', 'evalQuesType', 'evalAnsType']
 
-# An example result json file has been provided in './Results' folder.  
+# An example result json file has been provided in './Results' folder.
 
 [resFile, accuracyFile, evalQAFile, evalQuesTypeFile, evalAnsTypeFile] = [
-    '%s/Results/%s%s_%s_%s_%s_%s.json' % (dataDir, versionType, taskType, dataType, dataSubType, \
-                                          resultType, fileType) for fileType in fileTypes]
+    f'Results/{taskType}_{dataType}_{dataSubType}_{resultType}_{fileType}.json'
+    for fileType in fileTypes
+]
 
 # create vqa object and vqaRes object
-vqa = VQA(annFile, quesFile)
+vqa = VQA(annFile, quesFile, imgDir)
 vqaRes = vqa.load_result(resFile, quesFile)
 
 # create vqaEval object by taking vqa and vqaRes
