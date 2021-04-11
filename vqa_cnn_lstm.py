@@ -63,14 +63,13 @@ class OriginalVQA(pl.LightningModule):
         # activation funcitons
         self.leaky_relu = nn.LeakyReLU()
         self.tanh = nn.Tanh()
-        self.softmax = nn.Softmax(dim=1)
         self.dropout = nn.Dropout(0.5)
         
         # loss function
         self.criterion = nn.CrossEntropyLoss()
 
         # initialize parameters for fc layers
-        weights_init(self.lstm) # TODO add check to initialize the LSTM layer in utils.py
+        weights_init(self.lstm)
         weights_init(self.fc1) 
         weights_init(self.fc2) 
         weights_init(self.fc_questions)
@@ -107,7 +106,7 @@ class OriginalVQA(pl.LightningModule):
         question_features = self.leaky_relu(self.fc_questions(question_features))
     
         # point-wise multiplication
-        combined_feature = torch.mul(img_features, question_features)
+        combined_feature = self.dropout(self.leaky_relu(torch.mul(img_features, question_features)))
 
         # a fully connected neural network classifier with 2 hidden layers and 1000 hidden units (dropout 0.5) in each layer with tanh non-linearity
         combined_feature = self.fc1(combined_feature)       
@@ -115,7 +114,6 @@ class OriginalVQA(pl.LightningModule):
         combined_feature = self.dropout(combined_feature)
         logits = self.fc2(combined_feature)
 
-        # softmax layer to obtain a distribution over K answers
         return logits
 
     def training_step(self, batch, batch_idx):
