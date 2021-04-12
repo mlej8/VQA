@@ -122,7 +122,7 @@ class OriginalVQA(pl.LightningModule):
         """
 
         # The LightningModule knows what device it is on - you can reference via `self.device`, it makes your models hardware agnostic (you can train on any number of GPUs spread out on differnet machines)
-        (image, question_indices, answers) = batch
+        (image, question_indices, answers, q_ids) = batch
         
         # get predictions using forward method 
         preds = self(image, question_indices)
@@ -144,7 +144,7 @@ class OriginalVQA(pl.LightningModule):
         """
 
         # The LightningModule knows what device it is on - you can reference via `self.device`
-        (image, question_indices, answers) = batch
+        (image, question_indices, answers, q_ids) = batch
         
         # get predictions using forward method 
         preds = self(image, question_indices)
@@ -157,6 +157,8 @@ class OriginalVQA(pl.LightningModule):
         
         # logging validation loss
         self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+
+        # TODO compute val_acc using q_ids
 
         return loss
 
