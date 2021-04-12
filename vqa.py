@@ -36,10 +36,11 @@ class VQA(Dataset):
 	@classmethod
 	def vqa_collate(cls, batch):
 		""" Custom collate function for dataloader """
-		images = torch.stack([item[0] for item in batch]).float()
-		questions_indices = torch.stack([item[1] for item in batch]) # indices need to be int
-		answers = torch.stack([item[2] for item in batch]).float()
-		return images, questions_indices, answers
+		images = torch.stack([item["image"] for item in batch]).float()
+		questions_indices = torch.stack([item["question"] for item in batch]) # indices need to be int
+		answers = torch.stack([item["answer"] for item in batch]).float()
+		q_ids = torch.tensor([item["question_id"] for item in batch], dtype=int).reshape(-1,1)
+		return images, questions_indices, answers, q_ids
 	
 	def __init__(self, 
 				annotation_file=None,
@@ -62,9 +63,10 @@ class VQA(Dataset):
 
 		# load dataset
 		logger.info('Loading VQA annotations and questions into memory...')
-		time_t = datetime.datetime.utcnow()
 		self.annotations = {}
+		
 		if annotation_file is not None and question_file is not None and img_dir is not None:
+			time_t = datetime.datetime.utcnow()
 			self.annotations = json.load(open(annotation_file, 'r'))
 			self.questions = json.load(open(question_file, 'r'))
 			logger.info("Done in {}".format(datetime.datetime.utcnow() - time_t))
@@ -146,7 +148,7 @@ class VQA(Dataset):
 
 		# TODO process answer depending on answer type? # if annotation["answer_type"] == "number": # elif annotation["answer_type"] == "yes/no": # elif annotation["answer_type"] == "other":
 
-		return (image, question, answer)
+		return {"image":image, "question": question, "answer": answer, "question_id": q_id}
 
 	def preprocess_image(self, img_path):
 		""" Helper method to preprocess an image """	
