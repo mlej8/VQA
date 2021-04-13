@@ -260,7 +260,7 @@ if __name__ == "__main__":
     val_dataloader = DataLoader(
     	val_dataset,
     	batch_size=batch_size, 
-    	shuffle=shuffle,
+    	shuffle=False,
     	num_workers=num_workers,
         collate_fn=VQA.vqa_collate
 	)
