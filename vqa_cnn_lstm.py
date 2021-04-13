@@ -7,7 +7,6 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 from torchvision import models, transforms
 from config import *
-from pytorch_lightning.utilities.seed import seed_everything
 
 from torch.utils.data import DataLoader
 from pretrained import initialize_model
@@ -22,9 +21,6 @@ from vqa import VQA
 from preprocessing.vocabulary import Vocabulary
 
 from pretrained import set_parameter_requires_grad
-
-# setting the seed for reproducability (it is important to set seed when using DPP mode)
-seed_everything(7)
 
 class OriginalVQA(pl.LightningModule):
     """
@@ -57,7 +53,7 @@ class OriginalVQA(pl.LightningModule):
         self.fc_questions = nn.Linear(2*num_layers*hidden_size, embed_size)
 
         # mlp
-        self.fc1 = nn.Linear(2*embed_size, ans_vocab_size)
+        self.fc1 = nn.Linear(embed_size, ans_vocab_size)
         self.fc2 = nn.Linear(ans_vocab_size, ans_vocab_size)
 
         # activation funcitons
@@ -106,7 +102,7 @@ class OriginalVQA(pl.LightningModule):
         question_features = self.leaky_relu(self.fc_questions(question_features))
     
         # point-wise multiplication
-        combined_feature = self.dropout(self.leaky_relu(torch.cat((img_features, question_features), dim=1)))
+        combined_feature = self.dropout(self.leaky_relu(torch.mul(img_features, question_features)))
 
         # a fully connected neural network classifier with 2 hidden layers and 1000 hidden units (dropout 0.5) in each layer with tanh non-linearity
         combined_feature = self.fc1(combined_feature)       
