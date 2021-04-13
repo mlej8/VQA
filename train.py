@@ -6,13 +6,13 @@ import json
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning import loggers 
+
+from dict_logger import DictLogger
 
 import torch
 from torch.utils.data import DataLoader
 
 from params.trainer import *
-from params.comet import *
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -33,12 +33,7 @@ def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs
     # update checkpoints based on validation loss by using ModelCheckpoint callback monitoring 'val_loss'
     checkpoint_callback = ModelCheckpoint(monitor='val_loss')
 
-    logger = loggers.CometLogger( 
-            save_dir=folder,
-            workspace=workspace,
-            project_name=f"{type(model).__name__}", 
-            experiment_name=f"{type(model).__name__}_{datetime.now().strftime('%b_%d_%H_%M_%S')}"
-        )
+    logger = DictLogger()
 
     # define trainer 
     trainer = pl.Trainer(
@@ -52,19 +47,20 @@ def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs
     trainer.fit(model=model, train_dataloader=train_dataloader, val_dataloaders=val_dataloader)
 
     # save test result
-    PATH = folder + '/result'
+    PATH = os.path.join(folder,'result')
     with open(PATH, "w") as f:
         f.write(f"Model: {str(model)}\n")
-        # f.write(f"Lowest training loss: {str(min(logger.get_metric('train_loss')))}\n")
-        # f.write(f"Lowest validation loss: {str(min(logger.get_metric('val_loss')))}\n")
+        f.write(json.dumps(logger.metrics))
+        f.write("\n")
+        f.write(f"Lowest training loss: {str(min(logger.metrics['train_loss']))}\n")
+        f.write(f"Lowest validation loss: {str(min(logger.metrics['val_loss']))}\n")
+        # f.write(f"Test loss: {result}")
 
     # plot training vs validation loss
-    # plt.plot(range(len(logger.get_metric('train_loss'))), logger.get_metric('train_loss'), lw=2, label='Training Loss')
-    # plt.plot(range(len(logger.get_metric('val_loss'))), logger.get_metric('val_loss'), lw=2, label='Validation Loss')
-    # plt.legend()
-    # plt.xlabel('Epoch')
-    # plt.ylabel('Loss')
-    # plt.savefig(folder + f"/{type(model).__name__}_training_validation_loss.png")
-    # plt.show()
-    # TODO: add scheduler https://pytorch-lightning.readthedocs.io/en/latest/common/optimizers.html
-    # NOTE: if resuming training - https://pytorch-lightning.readthedocs.io/en/latest/common/weights_loading.html
+    plt.plot(range(len(logger.get_metric('train_loss'))), logger.get_metric('train_loss'), lw=2, label='Training Loss')
+    plt.plot(range(len(logger.get_metric('val_loss'))), logger.get_metric('val_loss'), lw=2, label='Validation Loss')
+    plt.legend()
+    plt.xlabel('Epoch')
+    plt.ylabel('Cross Entropy Loss')
+    plt.savefig(os.path.join(folder, f"{type(model).__name__}_training_validation_loss.png"))
+    plt.show()
