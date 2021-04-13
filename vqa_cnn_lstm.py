@@ -1,4 +1,3 @@
-import comet_ml
 import torch
 
 from train import train
