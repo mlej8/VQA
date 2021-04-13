@@ -22,7 +22,7 @@ def weights_init(layer):
                 if "weight" in name:
                     torch.nn.init.xavier_uniform_(param)
                 elif "bias" in name:
-                    torch.nn.init.constant(param, 0)
+                    torch.nn.init.constant_(param, 0)
 
     if isinstance(layer, torch.nn.ConvTranspose2d):
         torch.nn.init.xavier_uniform_(layer.weight.data)
