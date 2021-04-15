@@ -1,3 +1,5 @@
+import comet_ml
+
 import torch
 
 from train import train
@@ -166,18 +168,14 @@ class OriginalVQA(pl.LightningModule):
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, verbose=verbose, factor=factor, patience=patience)
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": monitored_loss}
 
-
-preprocess = transforms.Compose(
+if __name__ == "__main__":
+    preprocess = transforms.Compose(
     [
         transforms.ToTensor(),
         transforms.Resize((224,224)),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # TODO find mean/std for train/val coco
     ])
 
-
-if __name__ == "__main__":
-
-    # initialize training and validation dataset
     train_dataset = VQA(
         train_annFile,
         train_quesFile,
@@ -193,19 +191,19 @@ if __name__ == "__main__":
     
     train_dataloader = DataLoader(
     	train_dataset,
-    	batch_size=batch_size, 
-    	shuffle=shuffle, 
-    	num_workers=num_workers,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
         collate_fn=VQA.vqa_collate
-	)
-    
+    )
+
     val_dataloader = DataLoader(
-    	val_dataset,
-    	batch_size=batch_size, 
-    	shuffle=False,  # set False for validation dataloader
-    	num_workers=num_workers,
+        val_dataset,
+        batch_size=batch_size, 
+        shuffle=False,  # set False for validation dataloader
+        num_workers=num_workers,
         collate_fn=VQA.vqa_collate
-	)
+    )
 
     model = OriginalVQA(
         question_vocab_size=VQA.questions_vocabulary.size,
