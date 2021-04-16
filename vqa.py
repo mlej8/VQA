@@ -3,6 +3,8 @@ from torch.utils.data import DataLoader, Dataset
 import torchvision.transforms as transforms
 from torch.nn.utils.rnn import pad_sequence
 
+import abc
+
 from PIL import Image
 
 import numpy as np
@@ -18,11 +20,14 @@ from config import *
 
 from preprocessing.preprocess_text import preprocess_question_sentence
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+        format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
+        datefmt="%m/%d/%Y %H:%M:%S"
+        )
 logger = logging.getLogger(__name__)
 
-class VQA(Dataset):
-	
+class VQADataset(Dataset, abc.ABC):
+
 	# answer vocabulary
 	answers_vocabulary = Vocabulary(a_vocab_path)
 
@@ -36,20 +41,64 @@ class VQA(Dataset):
 	@classmethod
 	def vqa_collate(cls, batch):
 		""" Custom collate function for dataloader """
-		images = torch.stack([item["image"] for item in batch]).float()
-		questions_indices = torch.stack([item["question"] for item in batch]) # indices need to be int
-		answers = torch.stack([item["answer"] for item in batch]).float()
-		q_ids = torch.tensor([item["question_id"] for item in batch], dtype=int).reshape(-1,1)
-		return images, questions_indices, answers, q_ids
-	
-	def __init__(self, 
-				annotation_file=None,
-				question_file=None,
-				img_dir=None,
-				transform=transforms.Compose([
-					transforms.ToTensor(),
-					transforms.Resize((224,224)),
-					])):
+		mini_batch = dict()
+		mini_batch["image"] = torch.stack([item["image"] for item in batch]).float()
+		mini_batch["question"] = torch.stack([item["question"] for item in batch]) # indices need to be int
+		mini_batch["answer"] = torch.stack([item["answer"] for item in batch]).float()
+		mini_batch["question_id"] = torch.tensor([item["question_id"] for item in batch], dtype=int).reshape(-1,1)
+		mini_batch["answers"] = [item["answers"] for item in batch]
+		return mini_batch
+
+	def __init__(self, question_file):
+		# load dataset
+		self.questions = json.load(open(question_file, 'r'))
+
+	@abc.abstractmethod
+	def __len__(self):
+		pass
+
+	@abc.abstractmethod
+	def __getitem__(self, index):
+		pass
+
+	def preprocess_image(self, img_path):
+		""" Helper method to preprocess an image """	
+		# always opening images in rgb - so that greyscale images are copy through all 3 channels
+		image = Image.open(img_path).convert("RGB")
+
+		# apply transformation on the image
+		if self.transform:
+			image = self.transform(image)
+		
+		return image
+
+	def preprocess_question(self, question):
+		""" 
+		param: question (String): question string
+		return: question in bag of words vector 
+		"""
+		indices = torch.empty(self.max_question_length, dtype=int).fill_(self.questions_vocabulary.word2idx(Vocabulary.PAD_TOKEN))
+		words = preprocess_question_sentence(question)
+		for i, word in enumerate(words):
+			indices[i] = self.questions_vocabulary.word2idx(word)
+		return indices
+
+
+	def info(self):
+		"""
+		Print information about the VQA annotation file.
+		:return:
+		"""
+		for key, value in self.questions['info'].items():
+			logger.info('%s: %s'%(key, value))
+
+class VQA(VQADataset):
+
+	def __init__(self,
+				annotation_file: str,
+				question_file: str,
+				img_dir: str,
+				transform=None):
 		"""
 		Create the VQA Dataset
 
@@ -58,48 +107,41 @@ class VQA(Dataset):
 		:param img_dir: directory containing all images
 		:param transform: optional transform to be applied on an image sample.
 		"""
-		# TODO find captions for MSCOCO
-		# TODO group questions by answer_type
-
-		# load dataset
 		logger.info('Loading VQA annotations and questions into memory...')
-		self.annotations = {}
-		
-		if annotation_file is not None and question_file is not None and img_dir is not None:
-			time_t = datetime.datetime.utcnow()
-			self.annotations = json.load(open(annotation_file, 'r'))
-			self.questions = json.load(open(question_file, 'r'))
-			logger.info("Done in {}".format(datetime.datetime.utcnow() - time_t))
+		time_t = datetime.datetime.utcnow()
+		super(VQA, self).__init__(question_file)
+		self.annotations = json.load(open(annotation_file, 'r'))
+		logger.info("Done in {}".format(datetime.datetime.utcnow() - time_t))
 
-			# dictionary mapping question id to the annotation
-			self.question_annotation = {annotation['question_id']: [] for annotation in self.annotations['annotations']}
+		# dictionary mapping question id to the annotation
+		self.question_annotation = {annotation['question_id']: [] for annotation in self.annotations['annotations']}
 
-			# dictionary mapping question id to question
-			self.questions_id = {annotation['question_id']: [] for annotation in self.annotations['annotations']}
+		# dictionary mapping question id to question
+		self.questions_id = {annotation['question_id']: [] for annotation in self.annotations['annotations']}
 
-			# dictionary mapping image id to its annotations
-			self.img2QA = {annotation['image_id']: [] for annotation in self.annotations['annotations']}
+		# dictionary mapping image id to its annotations
+		self.img2QA = {annotation['image_id']: [] for annotation in self.annotations['annotations']}
 
-			# create index
-			self.create_index()
+		# create index
+		self.create_index()
 
-			# store an array of question ids for indexing
-			self.q_ids = list(self.questions_id.keys())
+		# store an array of question ids for indexing
+		self.q_ids = list(self.questions_id.keys())
 
-			self.data_subtype = self.questions["data_subtype"]
-			self.task_type = self.questions["task_type"]
-			self.data_type = self.questions["data_type"]
-			self.transform = transform
-			self.img_dir = img_dir
+		self.data_subtype = self.questions["data_subtype"]
+		self.task_type = self.questions["task_type"]
+		self.data_type = self.questions["data_type"]
+		self.transform = transform
+		self.img_dir = img_dir
 
-			logger.info("Annotation file: %s", annotation_file)
-			logger.info("Question file: %s", question_file)
-			logger.info("Data type: %s", self.data_type)
-			logger.info("Data subtype: %s", self.data_subtype)
-			logger.info("Image directory: %s", img_dir)
-			logger.info("Task type: %s", self.task_type)
-			if transform:
-				logger.info("Transform: %s", transform)
+		logger.info("Annotation file: %s", annotation_file)
+		logger.info("Question file: %s", question_file)
+		logger.info("Data type: %s", self.data_type)
+		logger.info("Data subtype: %s", self.data_subtype)
+		logger.info("Image directory: %s", img_dir)
+		logger.info("Task type: %s", self.task_type)
+		if transform:
+			logger.info("Transform: %s", transform)
 
 	def create_index(self):
 		# create index
@@ -136,11 +178,8 @@ class VQA(Dataset):
 
 		# get the question
 		question = self.questions_id[q_id]["question"]
-		question_type = annotation["question_type"]
 
-		# get the question's answers 
-		answer_type = annotation["answer_type"]
-		answers = annotation["answers"]
+		# get the question's answer
 		multiple_choice_answer = annotation["multiple_choice_answer"]
 
 		question = self.preprocess_question(question)
@@ -148,30 +187,14 @@ class VQA(Dataset):
 
 		# TODO process answer depending on answer type? # if annotation["answer_type"] == "number": # elif annotation["answer_type"] == "yes/no": # elif annotation["answer_type"] == "other":
 
-		return {"image":image, "question": question, "answer": answer, "question_id": q_id}
-
-	def preprocess_image(self, img_path):
-		""" Helper method to preprocess an image """	
-		# always opening images in rgb - so that greyscale images are copy through all 3 channels
-		image = Image.open(img_path).convert("RGB")
-
-		# apply transformation on the image
-		if self.transform:
-			image = self.transform(image)
-		
-		return image
-
-	def preprocess_question(self, question):
-		""" 
-		param: question (String): question string
-		return: question in bag of words vector 
-		"""
-		indices = torch.empty(self.max_question_length, dtype=int).fill_(self.questions_vocabulary.word2idx(Vocabulary.PAD_TOKEN))
-		words = preprocess_question_sentence(question)
-		for i, word in enumerate(words):
-			indices[i] = self.questions_vocabulary.word2idx(word)
-		return indices
-
+		return {"image":image, 
+				"question": question, 
+				"answer": answer, 
+				"question_id": q_id, 
+				"answers": [answer["answer"] for answer in annotation["answers"]], 
+				"answer_type": annotation["answer_type"], 
+				"question_type":annotation["question_type"]}
+	
 	def preprocess_answer(self, answer):
 		""" 
 		param: answer (String): answer string
@@ -181,14 +204,6 @@ class VQA(Dataset):
 		one_hot = torch.zeros(self.answers_vocabulary.size)
 		one_hot[self.answers_vocabulary.word2idx(answer)] = 1
 		return one_hot
-
-	def info(self):
-		"""
-		Print information about the VQA annotation file.
-		:return:
-		"""
-		for key, value in self.datset['info'].items():
-			logger.info('%s: %s'%(key, value))
 
 	def get_question_ids(self, imgIds = [], quesTypes = [], ansTypes = []):
 		"""
@@ -262,38 +277,73 @@ class VQA(Dataset):
 			logger.info("Question: %s" %(self.questions_id[quesId]['question']))
 			for ans in ann['answers']:
 				logger.info("Answer %d: %s" %(ans['answer_id'], ans['answer']))
-		
-	def load_result(self, resFile, question_file):
-		"""
-		Load result file and return a result object.
-		:param   resFile (str)     : file name of result file
-		:return: res (obj)         : result api object
-		"""
-		res = VQA()
-		res.questions = json.load(open(question_file))
-		res.annotations['info'] = copy.deepcopy(self.questions['info'])
-		res.annotations['task_type'] = copy.deepcopy(self.questions['task_type'])
-		res.annotations['data_type'] = copy.deepcopy(self.questions['data_type'])
-		res.annotations['data_subtype'] = copy.deepcopy(self.questions['data_subtype'])
-		res.annotations['license'] = copy.deepcopy(self.questions['license'])
 
-		logger.info('Loading and preparing results...     ')
+class VQATest(VQADataset):
+
+	def __init__(self,
+				question_file: str,
+				img_dir: str,
+				transform=None):
+		"""
+		Create the VQA Test Dataset
+
+		:param question_file: location of VQA question file
+		:param img_dir: directory containing all images
+		:param transform: optional transform to be applied on an image sample.
+		"""
+
+		# load dataset
+		logger.info('Loading VQA test questions into memory...')
 		time_t = datetime.datetime.utcnow()
-		anns    = json.load(open(resFile))
-		assert type(anns) == list, 'results is not an array of objects'
-		annsQuesIds = [ann['question_id'] for ann in anns]
-		assert set(annsQuesIds) == set(self.get_question_ids()), \
-		'Results do not correspond to current VQA set. Either the results do not have predictions for all question ids in annotation file or there is atleast one question id that does not belong to the question ids in the annotation file.'
-		for ann in anns:
-			quesId 			     = ann['question_id']
-			if res.annotations['task_type'] == 'Multiple Choice':
-				assert ann['answer'] in self.questions_id[quesId]['multiple_choices'], 'predicted answer is not one of the multiple choices'
-			qaAnn                = self.question_annotation[quesId]
-			ann['image_id']      = qaAnn['image_id'] 
-			ann['question_type'] = qaAnn['question_type']
-			ann['answer_type']   = qaAnn['answer_type']
-		logger.info('DONE (t=%0.2fs)'%((datetime.datetime.utcnow() - time_t).total_seconds()))
+		super(VQA, self).__init__(question_file)
+		logger.info("Done in {}".format(datetime.datetime.utcnow() - time_t))
 
-		res.annotations['annotations'] = anns
-		res.create_index()
-		return res
+		# store an array of question ids for indexing
+		self.q_ids = [question["question_id"] for question in self.questions["questions"]]
+
+		# dictionary mapping question id to question
+		self.questions_id = {}
+		for ques in self.questions['questions']:
+			self.questions_id[ques['question_id']] = ques
+
+		self.data_subtype = self.questions["data_subtype"].replace("-dev", "")
+		self.task_type = self.questions["task_type"]
+		self.data_type = self.questions["data_type"]
+		self.transform = transform
+		self.img_dir = img_dir
+
+		logger.info("Question file: %s", question_file)
+		logger.info("Data type: %s", self.data_type)
+		logger.info("Data subtype: %s", self.data_subtype)
+		logger.info("Image directory: %s", img_dir)
+		logger.info("Task type: %s", self.task_type)
+		if transform:
+			logger.info("Transform: %s", transform)
+
+	def __len__(self):
+		""" Return length of the dataset based on the number of questions """
+		return len(self.questions_id)
+
+	def __getitem__(self, index):
+		""" 
+		Each sample consist of (question, image, answer).
+		"""
+		q_id = self.q_ids[index]
+		question_dict = self.questions_id[q_id]
+		question = question_dict["question"]
+		img_id = question_dict["image_id"]
+
+		# get the image from disk
+		img_name = 'COCO_' + self.data_subtype + '_'+ str(img_id).zfill(12) + '.jpg'
+		img_path = os.path.join(self.img_dir,img_name)
+
+		# read image from disk
+		if os.path.isfile(img_path):
+			image = self.preprocess_image(img_path)
+		else:
+			logger.error(f"{img_path} is not a valid file.")
+			exit(1)
+
+		question = self.preprocess_question(question)
+
+		return {"image":image, "question": question, "question_id": q_id}

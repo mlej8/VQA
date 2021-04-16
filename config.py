@@ -22,8 +22,9 @@ val_quesFile        = '%s/Questions/%s%s_%s_%s_questions.json'%(dataDir, version
 val_imgDir 		    = '%s/Images/%s/%s/' %(dataDir, dataType, val_dataSubType)
 
 # configuration variables for VQA test
+testdev_dataSubType = 'test-dev2015'
+testdev_quesFile    = '%s/Questions/%s%s_%s_%s_questions.json'%(dataDir, versionType, taskType, dataType, testdev_dataSubType)
 test_dataSubType    = 'test2015'
-test_annFile        = '%s/Annotations/%s%s_%s_annotations.json'%(dataDir, versionType, dataType, test_dataSubType)
 test_quesFile       = '%s/Questions/%s%s_%s_%s_questions.json'%(dataDir, versionType, taskType, dataType, test_dataSubType)
 test_imgDir 		= '%s/Images/%s/%s/' %(dataDir, dataType, test_dataSubType)
 

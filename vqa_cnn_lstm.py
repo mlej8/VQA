@@ -117,21 +117,24 @@ class OriginalVQA(pl.LightningModule):
         """ 
         training_step method defines a single iteration in the training loop. 
         """
-
-        # The LightningModule knows what device it is on - you can reference via `self.device`, it makes your models hardware agnostic (you can train on any number of GPUs spread out on differnet machines)
-        (image, question_indices, answers, q_ids) = batch
+        image            = batch["image"]
+        question_indices = batch["question"]
+        answer           = batch["answer"]
+        q_ids            = batch["question_id"]
+        answers          = batch["answers"]
         
         # get predictions using forward method 
         preds = self(image, question_indices)
         
         # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
-        _, labels = torch.max(answers, dim=1)
+        _, labels = torch.max(answer, dim=1)
         
         # compute CE loss
         loss = self.criterion(preds, labels)
         
         # logging training loss
         self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
+        # TODO compute train_acc using q_ids and answers similar to basic_vqa
 
         return loss
 
@@ -139,15 +142,17 @@ class OriginalVQA(pl.LightningModule):
         """ 
         validation_step method defines a single iteration in the validation loop. 
         """
-
-        # The LightningModule knows what device it is on - you can reference via `self.device`
-        (image, question_indices, answers, q_ids) = batch
+        image            = batch["image"]
+        question_indices = batch["question"]
+        answer           = batch["answer"]
+        q_ids            = batch["question_id"]
+        answers          = batch["answers"]
         
         # get predictions using forward method 
         preds = self(image, question_indices)
         
         # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
-        _, labels = torch.max(answers, dim=1)
+        _, labels = torch.max(answer, dim=1)
 
         # compute CE loss
         loss = self.criterion(preds, labels)
