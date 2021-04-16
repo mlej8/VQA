@@ -295,7 +295,7 @@ class VQATest(VQADataset):
 		# load dataset
 		logger.info('Loading VQA test questions into memory...')
 		time_t = datetime.datetime.utcnow()
-		super(VQA, self).__init__(question_file)
+		super(VQATest, self).__init__(question_file)
 		logger.info("Done in {}".format(datetime.datetime.utcnow() - time_t))
 
 		# store an array of question ids for indexing

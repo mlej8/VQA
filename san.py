@@ -22,6 +22,13 @@ from preprocessing.vocabulary import Vocabulary
 
 from pretrained import set_parameter_requires_grad
 
+preprocess = transforms.Compose(
+    [
+        transforms.ToTensor(),
+        transforms.Resize((448,448)),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # TODO find mean/std for train/val coco
+    ])
+
 class Attention(torch.nn.Module):
     def __init__(self, d=1024, k=512, dropout=0.0):
         super(Attention, self).__init__()
@@ -233,12 +240,6 @@ class SAN(pl.LightningModule):
 
 
 if __name__ == "__main__":
-    preprocess = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            transforms.Resize((448,448)),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # TODO find mean/std for train/val coco
-        ])
     
     # initialize training and validation dataset
     train_dataset = VQA(
