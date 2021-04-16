@@ -62,7 +62,7 @@ class Attention(torch.nn.Module):
         ha = self.tanh(question_features + img_features)
         
         # add dropout
-        if getattr(self, 'dropout'):
+        if hasattr(self, 'dropout'):
             ha = self.dropout(ha)
         
         # N * 196 (m) * 1 -> N * 196 - given the image feature matrix `img_features` and the question vector `question_features` feed through a single layer neural network with softmax function to generate the attention distribution over the regions of the image
@@ -102,7 +102,7 @@ class SAN(pl.LightningModule):
         self.fc_questions = nn.Linear(2*num_layers*hidden_size, embed_size)
 
         # attention networks
-        self.attention_layers = nn.ModuleList([Attention(embed_size, hidden_size, dropout=dropout)] * num_attention_layer)
+        self.attention_layers = nn.ModuleList([Attention(embed_size, hidden_size)] * num_attention_layer)
 
         # classifier
         self.fc1 = nn.Linear(embed_size, ans_vocab_size)
