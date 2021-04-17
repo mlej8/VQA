@@ -49,13 +49,19 @@ class VQADataset(Dataset, abc.ABC):
 		mini_batch["answers"] = [item["answers"] for item in batch]
 		return mini_batch
 
-	def __init__(self, question_file):
+	def __init__(self, dataset_file):
+		""" 
+		:param dataset_file: path to the dataset
+		"""
 		# load dataset
-		self.questions = json.load(open(question_file, 'r'))
+		logger.info(f'Loading dataset at {dataset_file} into memory...')
+		time_t = datetime.datetime.utcnow()
+		self.dataset = json.load(open(dataset_file, 'r'))
+		logger.info("Done in {}".format(datetime.datetime.utcnow() - time_t))
 
-	@abc.abstractmethod
 	def __len__(self):
-		pass
+		""" Return length of the dataset based on the number of questions """
+		return len(self.dataset)
 
 	@abc.abstractmethod
 	def __getitem__(self, index):
@@ -83,16 +89,93 @@ class VQADataset(Dataset, abc.ABC):
 			indices[i] = self.questions_vocabulary.word2idx(word)
 		return indices
 
-
-	def info(self):
-		"""
-		Print information about the VQA annotation file.
-		:return:
-		"""
-		for key, value in self.questions['info'].items():
-			logger.info('%s: %s'%(key, value))
-
 class VQA(VQADataset):
+
+	def __init__(self,dataset_file: str, transform=None):
+		"""
+		Create the VQA Dataset
+		:param transform: optional transform to be applied on an image sample.
+		"""
+		super(VQA, self).__init__(dataset_file)
+		self.transform = transform
+		if transform:
+			logger.info("Transform: %s", transform)
+
+	def __getitem__(self, index):
+		""" 
+		Each sample consist of (question, image, answer).
+		"""
+		sample = self.dataset[index]
+		q_id = sample["question_id"]
+		img_path = sample["image_path"]
+
+		# read image from disk
+		if os.path.isfile(img_path):
+			image = self.preprocess_image(img_path)
+		else:
+			logger.error(f"{img_path} is not a valid file.")
+			exit(1)
+
+		# get the question's answer
+		multiple_choice_answer = sample["multiple_choice_answer"]
+		answer = self.preprocess_answer(multiple_choice_answer)
+
+		# get the question
+		question = self.preprocess_question(sample["question"])
+
+		# TODO process answer depending on answer type? # if annotation["answer_type"] == "number": # elif annotation["answer_type"] == "yes/no": # elif annotation["answer_type"] == "other":
+
+		return {"image":image, 
+				"question": question, 
+				"answer": answer, 
+				"question_id": q_id, 
+				"answers": [answer["answer"] for answer in sample["answers"]], 
+				"answer_type": sample["answer_type"], 
+				"question_type": sample["question_type"]}
+	
+	def preprocess_answer(self, answer):
+		""" 
+		param: answer (String): answer string
+		vocab (dict): vocabulary
+		return: answer in one-hot vector 
+		"""
+		one_hot = torch.zeros(self.answers_vocabulary.size)
+		one_hot[self.answers_vocabulary.word2idx(answer)] = 1
+		return one_hot
+
+class VQATest(VQADataset):
+
+	def __init__(self, dataset_file: str, transform=None):
+		"""
+		Create the VQA Test Dataset
+
+		:param transform: optional transform to be applied on an image sample.
+		"""
+		super(VQATest, self).__init__(dataset_file)
+		self.transform = transform
+		if transform:
+			logger.info("Transform: %s", transform)
+
+	def __getitem__(self, index):
+		""" 
+		Each sample consist of (question, image, answer).
+		"""
+		sample = self.dataset[index]
+		q_id = sample["question_id"]
+		img_path = sample["image_path"]
+
+		# read image from disk
+		if os.path.isfile(img_path):
+			image = self.preprocess_image(img_path)
+		else:
+			logger.error(f"{img_path} is not a valid file.")
+			exit(1)
+
+		question = self.preprocess_question(sample["question"])
+
+		return {"image":image, "question": question, "question_id": q_id}
+
+class OriginalVQA(VQADataset):
 
 	def __init__(self,
 				annotation_file: str,
@@ -278,72 +361,10 @@ class VQA(VQADataset):
 			for ans in ann['answers']:
 				logger.info("Answer %d: %s" %(ans['answer_id'], ans['answer']))
 
-class VQATest(VQADataset):
-
-	def __init__(self,
-				question_file: str,
-				img_dir: str,
-				transform=None):
+	def info(self):
 		"""
-		Create the VQA Test Dataset
-
-		:param question_file: location of VQA question file
-		:param img_dir: directory containing all images
-		:param transform: optional transform to be applied on an image sample.
+		Print information about the VQA annotation file.
+		:return:
 		"""
-
-		# load dataset
-		logger.info('Loading VQA test questions into memory...')
-		time_t = datetime.datetime.utcnow()
-		super(VQATest, self).__init__(question_file)
-		logger.info("Done in {}".format(datetime.datetime.utcnow() - time_t))
-
-		# store an array of question ids for indexing
-		self.q_ids = [question["question_id"] for question in self.questions["questions"]]
-
-		# dictionary mapping question id to question
-		self.questions_id = {}
-		for ques in self.questions['questions']:
-			self.questions_id[ques['question_id']] = ques
-
-		self.data_subtype = self.questions["data_subtype"].replace("-dev", "")
-		self.task_type = self.questions["task_type"]
-		self.data_type = self.questions["data_type"]
-		self.transform = transform
-		self.img_dir = img_dir
-
-		logger.info("Question file: %s", question_file)
-		logger.info("Data type: %s", self.data_type)
-		logger.info("Data subtype: %s", self.data_subtype)
-		logger.info("Image directory: %s", img_dir)
-		logger.info("Task type: %s", self.task_type)
-		if transform:
-			logger.info("Transform: %s", transform)
-
-	def __len__(self):
-		""" Return length of the dataset based on the number of questions """
-		return len(self.questions_id)
-
-	def __getitem__(self, index):
-		""" 
-		Each sample consist of (question, image, answer).
-		"""
-		q_id = self.q_ids[index]
-		question_dict = self.questions_id[q_id]
-		question = question_dict["question"]
-		img_id = question_dict["image_id"]
-
-		# get the image from disk
-		img_name = 'COCO_' + self.data_subtype + '_'+ str(img_id).zfill(12) + '.jpg'
-		img_path = os.path.join(self.img_dir,img_name)
-
-		# read image from disk
-		if os.path.isfile(img_path):
-			image = self.preprocess_image(img_path)
-		else:
-			logger.error(f"{img_path} is not a valid file.")
-			exit(1)
-
-		question = self.preprocess_question(question)
-
-		return {"image":image, "question": question, "question_id": q_id}
+		for key, value in self.questions['info'].items():
+			logger.info('%s: %s'%(key, value))
