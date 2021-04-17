@@ -35,9 +35,46 @@ datasets/
 
 In order to build the vocabulary for the questions and the answers, run `python -m preprocessing.preprocess_text`. This will create a directory `datasets/Vocabulary` where the vocabularies for questions and answers are stored.
 
+Then, to preprocess the dataset run `python -m preprocessing.preprocess_dataset`. This will create 6 dataset files:
+- preprocessed_train.json
+- preprocessed_val.json
+- preprocessed_train_val.json
+- preprocessed_test.json
+- preprocessed_test_dev.json
+- preprocessed_test_standard.json
+
+The first three datasets will have the following format:
+`
+    [
+        {
+            'question_type', 
+            'multiple_choice_answer', 
+            'answers', 
+            'image_id', 
+            'answer_type', 
+            'question_id',
+            'question', 
+            'image_path'
+        },
+    ...]
+`
+
+The last three (test datasets) will have the following format:
+`
+    [
+        {
+            'image_id' 
+            'question_id',
+            'question' 
+            'image_path'
+        }
+    ...]
+`
 # Models
 
-To run the simple VQA baseline: `python simple_vqa_baseline.py`
+Run the simple VQA baseline (BOWIMG): `python simple_vqa_baseline.py`
+Run the original VQA (deeper LSTM + CNN): `python vqa_cnn_lstm.py`
+Run the stacked attention network (SAN): `python san.py`
 ## Credits
 The PythonHelperTools, PythonEvaluationTools, QuestionTypes and Results comes from the following repository: https://github.com/GT-Vision-Lab/VQA
 
