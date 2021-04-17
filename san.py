@@ -170,8 +170,8 @@ class SAN(pl.LightningModule):
         ##################
         ### CLASSIFIER ###
         ##################
-        filtered_features = self.dropout(u)       
-        filtered_features = self.fc1(filtered_features)       
+        # filtered_features = self.dropout(u)       
+        filtered_features = self.fc1(u)       
         filtered_features = self.leaky_relu(filtered_features)
         filtered_features = self.dropout(filtered_features)
         logits = self.fc2(filtered_features)
