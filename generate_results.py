@@ -21,7 +21,9 @@ from vqa import VQA, VQATest
 import logging
 logger = logging.getLogger(__name__)
 if __name__ == '__main__':
-    MODEL_PATH = '/home/mlej8/projects/def-armanfn/mlej8/VQA/models/OriginalVQA/4a618c13c47a4fd3955355bfd9546c41/checkpoints/epoch=2-step=41603.ckpt'
+    OR_MODEL_PATH = '/home/mlej8/projects/def-armanfn/mlej8/VQA/models/OriginalVQA/Apr-17-02-20-49/OriginalVQA/56972bc21c92492b94fd8f0252d4b2f2/checkpoints/epoch=8-step=124811.ckp'
+    SB_MODEL_PATH = "/home/mlej8/projects/def-armanfn/mlej8/VQA/models/SimpleBaselineVQA/80709edb7f9f4b6c90a7905e780becb8/checkpoints/epoch=2-step=41603.ckpt"
+    SA_MODEL_PATH = "/home/mlej8/projects/def-armanfn/mlej8/VQA/models/SAN/"
 
     # wether evaluation on test-dev or test-standard
     test_dev = False
@@ -57,8 +59,10 @@ if __name__ == '__main__':
     )
 
     # load trained model
-    model = OriginalVQA.load_from_checkpoint(checkpoint_path=MODEL_PATH)
-    
+    model = OriginalVQA.load_from_checkpoint(checkpoint_path=OR_MODEL_PATH, in_dim=VQA.questions_vocabulary.size, out_dim=VQA.answers_vocabulary.size)
+    # model = SimpleBaselineVQA.load_from_checkpoint(checkpoint_path=SB_MODEL_PATH, in_dim=VQA.questions_vocabulary.size, out_dim=VQA.answers_vocabulary.size)
+    # model = SAN.load_from_checkpoint(checkpoint_path=SA_MODEL_PATH, in_dim=VQA.questions_vocabulary.size, out_dim=VQA.answers_vocabulary.size)
+
     # determine dataSubType
     resultFile = os.path.join("Results", f"{type(model).__name__}_{taskType}_{dataType}_results.json")
 
