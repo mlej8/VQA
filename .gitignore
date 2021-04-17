@@ -139,3 +139,5 @@ vqa-env/
 # user settings
 .vscode/
 keys/
+*.ckpt
+*.zip
