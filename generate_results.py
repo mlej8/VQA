@@ -23,7 +23,7 @@ if __name__ == '__main__':
     MODEL_PATH = 'models/OriginalVQA/4a618c13c47a4fd3955355bfd9546c41/checkpoints/epoch=2-step=41603.ckpt'
 
     # wether evaluation on test-dev or test-standard
-    test_dev = True
+    test_dev = False
     results = []
 
     # create test dataset
@@ -49,10 +49,10 @@ if __name__ == '__main__':
 
     # freeze all layers of the model and set it to evaluation mode
     model.freeze()
-
+    total_batches = len(test_loader)
     for idx, batch in enumerate(test_loader):
-        if idx % 10:
-            print(f"Done batch number {idx}")
+        if idx % 50:
+            print(f"Done batch number {idx} out of {total_batches}")
         output = model(batch["image"], batch["question"])
         _, preds = torch.max(output, dim=1)
         for pred, q_id in zip(preds, batch["question_id"].tolist()):
