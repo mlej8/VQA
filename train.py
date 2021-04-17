@@ -31,11 +31,16 @@ def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs
       monitor='val_loss', # monitor validation loss
       verbose=True, # log early-stop events
       patience=patience,
-      min_delta=0.00 # minimum change is 0
+      min_delta=0.00, # minimum change is 0
+      mode="min"
       )
 
     # update checkpoints based on validation loss by using ModelCheckpoint callback monitoring 'val_loss'
-    checkpoint_callback = ModelCheckpoint(monitor='val_loss')
+    checkpoint_callback = ModelCheckpoint(monitor='val_loss',
+                                          mode="min",
+                                          save_top_k=top_k,
+                                          save_last=True,
+                                          dirpath=folder)
 
     # initializing loggers
     logger = loggers.CometLogger( 
