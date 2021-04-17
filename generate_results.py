@@ -25,12 +25,8 @@ if __name__ == '__main__':
     SB_MODEL_PATH = "models/SimpleBaselineVQA/Apr-17-02-20-49/SimpleBaselineVQA/6155dbd7b8354c409344924ce3ce16ac/checkpoints/epoch=7-step=110943.ckpt"
     SA_MODEL_PATH = "models/SAN/"
 
-    # wether evaluation on test-dev or test-standard
-    test_dev = False
     results = []
-    """ 
     
-    """
     # create test dataset
     testdev_dataset = VQATest(
         testdev_quesFile,
@@ -60,8 +56,8 @@ if __name__ == '__main__':
 
     # load trained model
     model = OriginalVQA.load_from_checkpoint(checkpoint_path=OR_MODEL_PATH, question_vocab_size=VQA.questions_vocabulary.size, ans_vocab_size=VQA.answers_vocabulary.size)
-    # model = SimpleBaselineVQA.load_from_checkpoint(checkpoint_path=SB_MODEL_PATH, in_dim=VQA.questions_vocabulary.size, out_dim=VQA.answers_vocabulary.size)
-    # model = SAN.load_from_checkpoint(checkpoint_path=SA_MODEL_PATH, in_dim=VQA.questions_vocabulary.size, out_dim=VQA.answers_vocabulary.size)
+    # model = SimpleBaselineVQA.load_from_checkpoint(checkpoint_path=SB_MODEL_PATH, question_vocab_size=VQA.questions_vocabulary.size, ans_vocab_size=VQA.answers_vocabulary.size)
+    # model = SAN.load_from_checkpoint(checkpoint_path=SA_MODEL_PATH, question_vocab_size=VQA.questions_vocabulary.size, ans_vocab_size=VQA.answers_vocabulary.size)
 
     # determine dataSubType
     resultFile = os.path.join("Results", f"{type(model).__name__}_{taskType}_{dataType}_results.json")
