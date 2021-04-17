@@ -22,6 +22,8 @@ from preprocessing.vocabulary import Vocabulary
 
 from pretrained import set_parameter_requires_grad
 
+from dataloader import get_dataloaders
+
 preprocess = transforms.Compose(
     [
         transforms.ToTensor(),
@@ -84,7 +86,7 @@ class SAN(pl.LightningModule):
     """
     Predicts an answer to a question about an image using the Simple Baseline for Visual Question Answering paper (Zhou et al, 2017).
     """
-    def __init__(self, question_vocab_size, ans_vocab_size=1000, word_embed_size=300, hidden_size=512, num_layers=2, embed_size=1024, feature_extract=True, num_attention_layer=2, dropout=0.5):
+    def __init__(self, question_vocab_size, ans_vocab_size, word_embed_size=300, hidden_size=512, num_layers=2, embed_size=1024, feature_extract=True, num_attention_layer=2, dropout=0.5):
         super(SAN, self).__init__()
 
         # only use the visual features from the last pooling layer since it retains spatial information of the original images
@@ -240,40 +242,11 @@ class SAN(pl.LightningModule):
 
 
 if __name__ == "__main__":
-    
-    # initialize training and validation dataset
-    train_dataset = VQA(
-        train_annFile,
-        train_quesFile,
-        train_imgDir,
-        transform=preprocess
-        ) 
-    val_dataset = VQA(
-        val_annFile,
-        val_quesFile,
-        val_imgDir,
-        transform=preprocess
-        ) 
-    
-    train_dataloader = DataLoader(
-    	train_dataset,
-    	batch_size=batch_size, 
-    	shuffle=shuffle, 
-    	num_workers=num_workers,
-        collate_fn=VQA.vqa_collate
-	)
-    
-    val_dataloader = DataLoader(
-    	val_dataset,
-    	batch_size=batch_size, 
-    	shuffle=False,
-    	num_workers=num_workers,
-        collate_fn=VQA.vqa_collate
-	)
+    dataloaders = get_dataloaders(preprocess, batch_size,shuffle, num_workers)
 
     model = SAN(
         question_vocab_size=VQA.questions_vocabulary.size,
         ans_vocab_size=VQA.answers_vocabulary.size
         )
 
-    train(model, train_dataloader, val_dataloader, epochs)
+    train(model, dataloaders["train"], dataloaders["val"], epochs)

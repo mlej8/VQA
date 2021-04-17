@@ -24,6 +24,8 @@ from preprocessing.vocabulary import Vocabulary
 
 from pretrained import set_parameter_requires_grad
 
+from dataloader import get_dataloaders
+
 preprocess = transforms.Compose(
     [
         transforms.ToTensor(),
@@ -37,7 +39,7 @@ class SimpleBaselineVQA(pl.LightningModule):
     """
     Predicts an answer to a question about an image using the Simple Baseline for Visual Question Answering paper (Zhou et al, 2017).
     """
-    def __init__(self, questions_vocab_size, answers_vocab_size=1000, hidden_size=1024, word_embeddings_size=300, feature_extract=True, input_size=224):
+    def __init__(self, questions_vocab_size, answers_vocab_size, hidden_size=1024, word_embeddings_size=300, feature_extract=True, input_size=224):
         super(SimpleBaselineVQA, self).__init__()
         
         # input size to CNN
@@ -177,39 +179,11 @@ class SimpleBaselineVQA(pl.LightningModule):
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": monitored_loss}
 
 if __name__ == "__main__":
-    # initialize training and validation dataset
-    train_dataset = VQA(
-        train_annFile,
-        train_quesFile,
-        train_imgDir,
-        transform=preprocess
-    )
-    val_dataset = VQA(
-        val_annFile,
-        val_quesFile,
-        val_imgDir,
-        transform=preprocess
-    )
-
-    train_dataloader = DataLoader(
-        train_dataset,
-        batch_size=batch_size,
-        shuffle=shuffle,
-        num_workers=num_workers,
-        collate_fn=VQA.vqa_collate
-    )
-
-    val_dataloader = DataLoader(
-        val_dataset,
-        batch_size=batch_size,
-        shuffle=False,  # set False for validation dataloader
-        num_workers=num_workers,
-        collate_fn=VQA.vqa_collate
-    )
-
+    dataloaders = get_dataloaders(preprocess, batch_size,shuffle, num_workers)
+    
     model = SimpleBaselineVQA(
         questions_vocab_size=VQA.questions_vocabulary.size,
         answers_vocab_size=VQA.answers_vocabulary.size
     )
 
-    train(model, train_dataloader, val_dataloader, epochs)
+    train(model, dataloaders["train"], dataloaders["val"], epochs)
