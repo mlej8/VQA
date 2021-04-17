@@ -106,7 +106,7 @@ class SAN(pl.LightningModule):
 
         # classifier
         self.fc1 = nn.Linear(embed_size, ans_vocab_size)
-        # self.fc2 = nn.Linear(ans_vocab_size, ans_vocab_size)
+        self.fc2 = nn.Linear(ans_vocab_size, ans_vocab_size)
 
         # activation funcitons
         self.leaky_relu = nn.LeakyReLU()
@@ -122,7 +122,7 @@ class SAN(pl.LightningModule):
         weights_init(self.word2vec)
         weights_init(self.fc_questions)
         weights_init(self.fc1) 
-        # weights_init(self.fc2) 
+        weights_init(self.fc2) 
 
         # save hyperparameters
         self.save_hyperparameters()
@@ -170,11 +170,11 @@ class SAN(pl.LightningModule):
         ##################
         ### CLASSIFIER ###
         ##################
-        # filtered_features = self.dropout(u)       
-        logits = self.fc1(u)       
-        # filtered_features = self.leaky_relu(filtered_features)
-        # filtered_features = self.dropout(filtered_features)
-        # logits = self.fc2(filtered_features)
+        filtered_features = self.dropout(u)       
+        filtered_features = self.fc1(filtered_features)       
+        filtered_features = self.leaky_relu(filtered_features)
+        filtered_features = self.dropout(filtered_features)
+        logits = self.fc2(filtered_features)
 
         return logits
 
