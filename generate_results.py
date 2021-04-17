@@ -21,9 +21,9 @@ from vqa import VQA, VQATest
 import logging
 logger = logging.getLogger(__name__)
 if __name__ == '__main__':
-    OR_MODEL_PATH = '/home/mlej8/projects/def-armanfn/mlej8/VQA/models/OriginalVQA/Apr-17-02-20-49/OriginalVQA/56972bc21c92492b94fd8f0252d4b2f2/checkpoints/epoch=8-step=124811.ckp'
-    SB_MODEL_PATH = "/home/mlej8/projects/def-armanfn/mlej8/VQA/models/SimpleBaselineVQA/80709edb7f9f4b6c90a7905e780becb8/checkpoints/epoch=2-step=41603.ckpt"
-    SA_MODEL_PATH = "/home/mlej8/projects/def-armanfn/mlej8/VQA/models/SAN/"
+    OR_MODEL_PATH = "models/OriginalVQA/Apr-17-02-20-49/OriginalVQA/56972bc21c92492b94fd8f0252d4b2f2/checkpoints/epoch=8-step=124811.ckpt"
+    SB_MODEL_PATH = "models/SimpleBaselineVQA/Apr-17-02-20-49/SimpleBaselineVQA/6155dbd7b8354c409344924ce3ce16ac/checkpoints/epoch=7-step=110943.ckpt"
+    SA_MODEL_PATH = "models/SAN/"
 
     # wether evaluation on test-dev or test-standard
     test_dev = False
@@ -59,7 +59,7 @@ if __name__ == '__main__':
     )
 
     # load trained model
-    model = OriginalVQA.load_from_checkpoint(checkpoint_path=OR_MODEL_PATH, in_dim=VQA.questions_vocabulary.size, out_dim=VQA.answers_vocabulary.size)
+    model = OriginalVQA.load_from_checkpoint(checkpoint_path=OR_MODEL_PATH, question_vocab_size=VQA.questions_vocabulary.size, ans_vocab_size=VQA.answers_vocabulary.size)
     # model = SimpleBaselineVQA.load_from_checkpoint(checkpoint_path=SB_MODEL_PATH, in_dim=VQA.questions_vocabulary.size, out_dim=VQA.answers_vocabulary.size)
     # model = SAN.load_from_checkpoint(checkpoint_path=SA_MODEL_PATH, in_dim=VQA.questions_vocabulary.size, out_dim=VQA.answers_vocabulary.size)
 
