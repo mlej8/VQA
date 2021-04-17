@@ -1,3 +1,5 @@
+import os
+
 # setting the seed for reproducability (it is important to set seed when using DPP mode)
 from pytorch_lightning.utilities.seed import seed_everything
 # setting the seed for reproducability (it is important to set seed when using DPP mode)
@@ -29,8 +31,16 @@ test_quesFile       = '%s/Questions/%s%s_%s_%s_questions.json'%(dataDir, version
 test_imgDir 		= '%s/Images/%s/%s/' %(dataDir, dataType, test_dataSubType)
 
 # vocabularies
-q_vocab_path = "datasets/Vocabulary/questions_vocabulary.txt" 
-a_vocab_path = "datasets/Vocabulary/answers_vocabulary.txt"
+q_vocab_path = os.path.join(dataDir,"Vocabulary","questions_vocabulary.txt")
+a_vocab_path = os.path.join(dataDir, "Vocabulary", "answers_vocabulary.txt")
 
 # stats about questions
-questions_stats_path = "datasets/Vocabulary/questions_stats.txt"
+questions_stats_path = os.path.join(dataDir,"Vocabulary", "questions_stats.txt")
+
+# preprocessed datasets path
+preprocessed_train = os.path.join(dataDir, "preprocessed_train.json")
+preprocessed_val = os.path.join(dataDir, "preprocessed_val.json")
+preprocessed_test_standard = os.path.join(dataDir, "preprocessed_test_standard.json")
+preprocessed_test_dev = os.path.join(dataDir, "preprocessed_test_dev.json")
+preprocessed_train_val = os.path.join(dataDir, "preprocessed_train_val.json")
+preprocessed_test = os.path.join(dataDir, "preprocessed_test.json")
