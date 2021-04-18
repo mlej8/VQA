@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --gres=gpu:1              # Number of GPU(s) per node
 #SBATCH --cpus-per-task=8         # CPU cores/threads
-#SBATCH --mem=16G                 # memory
-#SBATCH --time=2-0                # A time limit of zero requests that no time limit be imposed. Acceptable time formats include "minutes", "minutes:seconds", "hours:minutes:seconds", "days-hours", "days-hours:minutes" and "days-hours:minutes:seconds".
+#SBATCH --mem=24G                 # memory
+#SBATCH --time=3-0                # A time limit of zero requests that no time limit be imposed. Acceptable time formats include "minutes", "minutes:seconds", "hours:minutes:seconds", "days-hours", "days-hours:minutes" and "days-hours:minutes:seconds".
 #SBATCH --job-name=vqa         
 #SBATCH --output=logs/%j
 #SBATCH --mail-user=er.li@mail.mcgill.ca
@@ -19,8 +19,8 @@ then
     echo "Usage $0 <filename>"
 else
     # run the command
-    source vqa-env/bin/activate
-    
+    source ./vqa-env/bin/activate
+
     # confirm venv running
     python --version
 

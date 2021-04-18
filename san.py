@@ -258,7 +258,7 @@ class SAN(pl.LightningModule):
 
 if __name__ == "__main__":
     # final training or not
-    final = True
+    final = False
 
     model = SAN(
         questions_vocab_size=VQA.questions_vocabulary.size,
