@@ -42,7 +42,7 @@ if __name__ == '__main__':
     model.freeze()
 
     # get test loader
-    test_loader = get_dataloaders(preprocess, 32, False, 0, train=False, val=False, test=True)["test"]
+    test_loader = get_dataloaders(preprocess, 32, False, 8, train=False, val=False, test=True)["test"]
 
     # generate result file name
     resultFile = os.path.join("Results", f"{type(model).__name__}_{versionType}{taskType}_{dataType}_results.json")

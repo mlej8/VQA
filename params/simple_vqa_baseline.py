@@ -32,3 +32,6 @@ weightClip_other = 20
 # dataloader settings
 num_workers = 8
 shuffle = True
+
+# optimal number of epochs based on hyperparameter tuning on val dataset
+opt_epochs = 15

@@ -40,7 +40,7 @@ def get_dataloaders(preprocess: transforms.Compose, batch_size, shuffle, num_wor
             collate_fn=VQA.vqa_collate
         )
     
-    if val:
+    if val and not final_train: # no validation on final train
 
         val_dataset = VQA(
             dataset_file=preprocessed_val,

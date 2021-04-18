@@ -183,11 +183,17 @@ class OriginalVQA(pl.LightningModule):
         return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": monitored_loss}
 
 if __name__ == "__main__":
-    dataloaders = get_dataloaders(preprocess, batch_size,shuffle, num_workers)
-
+    # final training or not
+    final = True
+    
     model = OriginalVQA(
         question_vocab_size=VQA.questions_vocabulary.size,
         ans_vocab_size=VQA.answers_vocabulary.size
         )
 
-    train(model, dataloaders["train"], dataloaders["val"], epochs)
+    if final:
+        dataloaders = get_dataloaders(preprocess, batch_size, shuffle, num_workers, final_train=True)
+        train(model=model, train_dataloader=dataloaders["train"], epochs=opt_epochs)
+    else:
+        dataloaders = get_dataloaders(preprocess, batch_size,shuffle, num_workers)
+        train(model, dataloaders["train"], dataloaders["val"], epochs)
