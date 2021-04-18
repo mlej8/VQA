@@ -39,9 +39,12 @@ class SimpleBaselineVQA(pl.LightningModule):
     """
     Predicts an answer to a question about an image using the Simple Baseline for Visual Question Answering paper (Zhou et al, 2017).
     """
-    def __init__(self, questions_vocab_size, answers_vocab_size, hidden_size=1024, word_embeddings_size=300, feature_extract=True, input_size=224):
+    def __init__(self, questions_vocab_size, answers_vocab_size, hidden_size=1024, word_embeddings_size=300, feature_extract=True, input_size=224, final_train=False):
         super(SimpleBaselineVQA, self).__init__()
         
+        # whether training with train + val (final training)
+        self.final_train = final_train
+
         # input size to CNN
         self.input_size = input_size
 
@@ -175,8 +178,12 @@ class SimpleBaselineVQA(pl.LightningModule):
         """
         # creating optimizer for our model
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, verbose=verbose, patience=patience, factor=factor)
-        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": monitored_loss}
+        if self.final_train:
+            return {"optimizer": optimizer}
+        else:
+            optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, verbose=verbose, patience=patience, factor=factor)
+            return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": monitored_loss}
 
 if __name__ == "__main__":
     # final training or not
@@ -184,7 +191,8 @@ if __name__ == "__main__":
     
     model = SimpleBaselineVQA(
         questions_vocab_size=VQA.questions_vocabulary.size,
-        answers_vocab_size=VQA.answers_vocabulary.size
+        answers_vocab_size=VQA.answers_vocabulary.size,
+        final_train=final
     )
 
     if final:

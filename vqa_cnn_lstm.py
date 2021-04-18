@@ -36,9 +36,12 @@ class OriginalVQA(pl.LightningModule):
     """
     Predicts an answer to a question about an image using the Simple Baseline for Visual Question Answering paper (Zhou et al, 2017).
     """
-    def __init__(self, question_vocab_size, ans_vocab_size, word_embed_size=300, hidden_size=512, num_layers=1, embed_size=1024, feature_extract=True, input_size=224):
+    def __init__(self, question_vocab_size, ans_vocab_size, word_embed_size=300, hidden_size=512, num_layers=2, embed_size=1024, feature_extract=True, input_size=224, final_train=False):
         super(OriginalVQA, self).__init__()
-        
+
+        # whether training with train + val (final training)
+        self.final_train = final_train
+
         # input size to CNN
         self.input_size = input_size
 
@@ -179,8 +182,12 @@ class OriginalVQA(pl.LightningModule):
         """
         # creating optimizer for our model
         optimizer = torch.optim.Adam(self.parameters(), lr=lr)
-        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, verbose=verbose, factor=factor, patience=patience)
-        return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": monitored_loss}
+        if self.final_train:
+            return {"optimizer": optimizer}
+        else:
+            optimizer = torch.optim.Adam(self.parameters(), lr=lr)
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, verbose=verbose, patience=patience, factor=factor)
+            return {"optimizer": optimizer, "lr_scheduler": scheduler, "monitor": monitored_loss}
 
 if __name__ == "__main__":
     # final training or not
@@ -188,7 +195,8 @@ if __name__ == "__main__":
     
     model = OriginalVQA(
         question_vocab_size=VQA.questions_vocabulary.size,
-        ans_vocab_size=VQA.answers_vocabulary.size
+        ans_vocab_size=VQA.answers_vocabulary.size,
+        final_train=final
         )
 
     if final:
