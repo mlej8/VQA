@@ -46,7 +46,7 @@ def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader, epochs
     logger = loggers.CometLogger( 
             save_dir=folder,
             workspace=workspace,
-            project_name=f"{type(model).__name__}", 
+            project_name=project_name, 
             experiment_name=f"{type(model).__name__}_{datetime.now().strftime('%b_%d_%H_%M_%S')}"
         )
 
