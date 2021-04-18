@@ -130,7 +130,7 @@ def test(PATH, model, preprocess):
     test_loader = get_dataloaders(preprocess, test_batch_size, test_shuffle, test_num_workers, train=False, val=False, test=True)["test"]
 
     # generate result file name
-    result_file = os.path.join("Results", f"{type(model).__name__}_{versionType}{taskType}_{dataType}_results_{datetime.now().strftime('%b-%d-%H-%M-%S')}.json")
+    result_file = os.path.join("Results", f"{type(model).__name__}_{versionType}{taskType}_{dataType}_results_{PATH.split('/')[2]}.json")
     
     # list to store predictions
     results = []
