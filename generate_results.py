@@ -22,6 +22,10 @@ from dataloader import get_dataloaders
 from vqa import VQA, VQATest
 import logging
 logger = logging.getLogger(__name__)
+
+# find device
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 if __name__ == '__main__':
     # model path # NOTE: change this for each model
     OR_MODEL_PATH = "models/OriginalVQA/Apr-17-02-20-49/OriginalVQA/56972bc21c92492b94fd8f0252d4b2f2/checkpoints/epoch=8-step=124811.ckpt"
@@ -34,7 +38,7 @@ if __name__ == '__main__':
     preprocess = original_preprocess # NOTE: change this for each model
 
     # load trained model NOTE: change this for each model
-    model = OriginalVQA.load_from_checkpoint(checkpoint_path=OR_MODEL_PATH, question_vocab_size=VQA.questions_vocabulary.size, ans_vocab_size=VQA.answers_vocabulary.size)
+    model = OriginalVQA.load_from_checkpoint(checkpoint_path=OR_MODEL_PATH, question_vocab_size=VQA.questions_vocabulary.size, ans_vocab_size=VQA.answers_vocabulary.size,  map_location=device)
     # model = SimpleBaselineVQA.load_from_checkpoint(checkpoint_path=SB_MODEL_PATH, question_vocab_size=VQA.questions_vocabulary.size, ans_vocab_size=VQA.answers_vocabulary.size)
     # model = SAN.load_from_checkpoint(checkpoint_path=SA_MODEL_PATH, question_vocab_size=VQA.questions_vocabulary.size, ans_vocab_size=VQA.answers_vocabulary.size)
 
@@ -42,7 +46,7 @@ if __name__ == '__main__':
     model.freeze()
 
     # get test loader
-    test_loader = get_dataloaders(preprocess, 32, False, 8, train=False, val=False, test=True)["test"]
+    test_loader = get_dataloaders(preprocess, 256, False, 8, train=False, val=False, test=True)["test"]
 
     # generate result file name
     resultFile = os.path.join("Results", f"{type(model).__name__}_{versionType}{taskType}_{dataType}_results.json")
@@ -50,16 +54,18 @@ if __name__ == '__main__':
     logger.info(f"Predicting on test dataset (standard + dev)")
     total_batch_num = len(test_loader)
     for idx, batch in enumerate(test_loader):
-        output = model(batch["image"], batch["question"])
+        image = batch["image"].to(device)
+        question = batch["question"].to(device)
+        output = model(image, question)
         _, preds = torch.max(output, dim=1)
         results += [{
             "answer": VQA.answers_vocabulary.idx2word(pred),
             "question_id": q_id
             } 
-            for pred, q_id in zip(preds.tolist(), batch["question_id"].tolist())]
+            for pred, q_id in zip(preds.cpu().tolist(), batch["question_id"].tolist())]
         logger.info(f"Done batch {idx} out of {total_batch_num}")
         
     logger.info(f"Done prediction!")
-    
+
     with open(resultFile, 'w') as outfile:
         json.dump(results, outfile)
