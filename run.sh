@@ -20,5 +20,10 @@ then
 else
     # run the command
     source vqa-env/bin/activate
+    
+    # confirm venv running
+    python --version
+
+    # run file
     python $1
 fi
