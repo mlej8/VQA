@@ -21,7 +21,7 @@ file_logger = logging.getLogger(__name__)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def train(model, train_dataloader: DataLoader, epochs: int, val_dataloader:DataLoader = None):
+def train(model, train_dataloader: DataLoader, val_dataloader:DataLoader = None, epochs: int = 30):
     # create folder for each run
     folder = "models/{}/{}".format(type(model).__name__, datetime.now().strftime("%b-%d-%H-%M-%S"))
     os.makedirs(folder, exist_ok=True)
@@ -76,6 +76,5 @@ def train(model, train_dataloader: DataLoader, epochs: int, val_dataloader:DataL
         logger=logger, 
         progress_bar_refresh_rate=30,
         callbacks=[checkpoint_callback])
-        )
 
       trainer.fit(model=model, train_dataloader=train_dataloader)
