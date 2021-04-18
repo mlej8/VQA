@@ -86,7 +86,7 @@ class SAN(pl.LightningModule):
     """
     Predicts an answer to a question about an image using the Simple Baseline for Visual Question Answering paper (Zhou et al, 2017).
     """
-    def __init__(self, question_vocab_size, ans_vocab_size, word_embed_size=300, hidden_size=512, num_layers=2, embed_size=1024, feature_extract=True, num_attention_layer=2, dropout=0.5, final_train=False):
+    def __init__(self, questions_vocab_size, answers_vocab_size, word_embed_size=300, hidden_size=512, num_layers=2, embed_size=1024, feature_extract=True, num_attention_layer=2, dropout=0.5, final_train=False):
         super(SAN, self).__init__()
 
         # whether training with train + val (final training)
@@ -102,7 +102,7 @@ class SAN(pl.LightningModule):
         self.fc_image = nn.Linear(hidden_size,embed_size)      
                 
         # lstm
-        self.word2vec = nn.Embedding(question_vocab_size, word_embed_size, padding_idx=VQA.questions_vocabulary.word2idx(Vocabulary.PAD_TOKEN))
+        self.word2vec = nn.Embedding(questions_vocab_size, word_embed_size, padding_idx=VQA.questions_vocabulary.word2idx(Vocabulary.PAD_TOKEN))
         self.lstm = nn.LSTM(word_embed_size, hidden_size, num_layers, batch_first=True)
         self.fc_questions = nn.Linear(2*num_layers*hidden_size, embed_size)
 
@@ -110,8 +110,8 @@ class SAN(pl.LightningModule):
         self.attention_layers = nn.ModuleList([Attention(embed_size, hidden_size)] * num_attention_layer)
 
         # classifier
-        self.fc1 = nn.Linear(embed_size, ans_vocab_size)
-        self.fc2 = nn.Linear(ans_vocab_size, ans_vocab_size)
+        self.fc1 = nn.Linear(embed_size, answers_vocab_size)
+        self.fc2 = nn.Linear(answers_vocab_size, answers_vocab_size)
 
         # activation funcitons
         self.leaky_relu = nn.LeakyReLU()
@@ -261,8 +261,8 @@ if __name__ == "__main__":
     final = False
 
     model = SAN(
-        question_vocab_size=VQA.questions_vocabulary.size,
-        ans_vocab_size=VQA.answers_vocabulary.size,
+        questions_vocab_size=VQA.questions_vocabulary.size,
+        answers_vocab_size=VQA.answers_vocabulary.size,
         final_train=final
         )
         

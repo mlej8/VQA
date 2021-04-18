@@ -24,8 +24,6 @@ from preprocessing.vocabulary import Vocabulary
 
 from pretrained import set_parameter_requires_grad
 
-from dataloader import get_dataloaders
-
 preprocess = transforms.Compose(
     [
         transforms.ToTensor(),
@@ -204,9 +202,12 @@ if __name__ == "__main__":
         final_train=final
     )
 
-    if final:
-        dataloaders = get_dataloaders(preprocess, batch_size, shuffle, num_workers, final_train=True)
-        train(model=model, train_dataloader=dataloaders["train"], epochs=opt_epochs)
-    else:
-        dataloaders = get_dataloaders(preprocess, batch_size,shuffle, num_workers)
-        train(model, dataloaders["train"], dataloaders["val"], epochs)
+    train(
+        model=model,
+        batch_size=batch_size, 
+        shuffle=shuffle, 
+        num_workers=num_workers, 
+        preprocess=preprocess, 
+        final_train=final, 
+        epochs=opt_epochs if final else epochs
+        )
