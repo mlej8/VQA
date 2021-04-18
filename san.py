@@ -139,8 +139,8 @@ class SAN(pl.LightningModule):
         #####################
         ### IMAGE CHANNEL ###
         #####################
-        # N * 3 * 448 * 448 -> N * 512 * 14 * 14 - 14 × 14 is the number of regions in the image and 512 is the dimension of the feature vector for each region
-        img_features = self.cnn(image) # each pixel corresponds to a 32 × 32 pixel region of the original input image and we have 196 feature vectors for each image region
+        # N * 3 * 448 * 448 -> N * 512 * 14 * 14 - 14 x 14 is the number of regions in the image and 512 is the dimension of the feature vector for each region
+        img_features = self.cnn(image) # each pixel corresponds to a 32 x 32 pixel region of the original input image and we have 196 feature vectors for each image region
 
         # N * 512 * 14 * 14 -> N * 196 * 512
         img_features = img_features.reshape(img_features.size(0), -1, img_features.size(1))
