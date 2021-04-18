@@ -38,9 +38,9 @@ if __name__ == '__main__':
     preprocess = original_preprocess # NOTE: change this for each model
 
     # load trained model NOTE: change this for each model
-    model = OriginalVQA.load_from_checkpoint(checkpoint_path=OR_MODEL_PATH, question_vocab_size=VQA.questions_vocabulary.size, ans_vocab_size=VQA.answers_vocabulary.size,  map_location=device)
-    # model = SimpleBaselineVQA.load_from_checkpoint(checkpoint_path=SB_MODEL_PATH, question_vocab_size=VQA.questions_vocabulary.size, ans_vocab_size=VQA.answers_vocabulary.size)
-    # model = SAN.load_from_checkpoint(checkpoint_path=SA_MODEL_PATH, question_vocab_size=VQA.questions_vocabulary.size, ans_vocab_size=VQA.answers_vocabulary.size)
+    model = OriginalVQA.load_from_checkpoint(checkpoint_path=OR_MODEL_PATH, questions_vocab_size=VQA.questions_vocabulary.size, answers_vocab_size=VQA.answers_vocabulary.size,  map_location=device)
+    # model = SimpleBaselineVQA.load_from_checkpoint(checkpoint_path=SB_MODEL_PATH, questions_vocab_size=VQA.questions_vocabulary.size, answers_vocab_size=VQA.answers_vocabulary.size)
+    # model = SAN.load_from_checkpoint(checkpoint_path=SA_MODEL_PATH, questions_vocab_size=VQA.questions_vocabulary.size, answers_vocab_size=VQA.answers_vocabulary.size)
 
     # freeze all layers of the model and set it to evaluation mode
     model.freeze()
