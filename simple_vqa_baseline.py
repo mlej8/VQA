@@ -136,13 +136,18 @@ class SimpleBaselineVQA(pl.LightningModule):
 
         # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
         _, labels = torch.max(answer, dim=1)
+        _, preds_idx = torch.max(preds,dim=1)
+        predicted_words = [VQA.answers_vocabulary.idx2word(idx) for idx in preds_idx.tolist()]
 
         # compute CE loss
         loss = self.criterion(preds, labels)
 
+        # compute the train_acc
+        train_acc = sum([min(answers[i].count(word)/3, 1) for i, word in enumerate(predicted_words)]) / batch_size
+
         # logging training loss
         self.log("train_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
-        # TODO compute train accuracy with q_ids and answers
+        self.log("train_acc", train_acc, on_step=False, on_epoch=True, prog_bar=True)
 
         return loss
 
@@ -161,14 +166,18 @@ class SimpleBaselineVQA(pl.LightningModule):
 
         # CrossEntropyLoss expects class indices and not one-hot encoded vector as the target
         _, labels = torch.max(answer, dim=1)
+        _, preds_idx = torch.max(preds, dim=1)
+        predicted_words = [VQA.answers_vocabulary.idx2word(idx) for idx in preds_idx.tolist()]
 
         # compute CE loss
         loss = self.criterion(preds, labels)
 
+        # compute the val_acc
+        val_acc = sum([min(answers[i].count(word)/3, 1) for i, word in enumerate(predicted_words)]) / batch_size
+
         # logging validation loss
         self.log("val_loss", loss, on_step=False, on_epoch=True, prog_bar=True)
-
-        # TODO compute validation accuracy with q_ids and answers
+        self.log("val_acc", val_acc, on_step=False, on_epoch=True, prog_bar=True)
 
         return loss
 
@@ -187,7 +196,7 @@ class SimpleBaselineVQA(pl.LightningModule):
 
 if __name__ == "__main__":
     # final training or not
-    final = True
+    final = False
     
     model = SimpleBaselineVQA(
         questions_vocab_size=VQA.questions_vocabulary.size,
