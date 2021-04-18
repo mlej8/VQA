@@ -36,7 +36,7 @@ class OriginalVQA(pl.LightningModule):
     """
     Predicts an answer to a question about an image using the Simple Baseline for Visual Question Answering paper (Zhou et al, 2017).
     """
-    def __init__(self, question_vocab_size, ans_vocab_size, word_embed_size=300, hidden_size=512, num_layers=2, embed_size=1024, feature_extract=True, input_size=224):
+    def __init__(self, question_vocab_size, ans_vocab_size, word_embed_size=300, hidden_size=512, num_layers=1, embed_size=1024, feature_extract=True, input_size=224):
         super(OriginalVQA, self).__init__()
         
         # input size to CNN
