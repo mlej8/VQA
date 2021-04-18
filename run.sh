@@ -4,7 +4,7 @@
 #SBATCH --mem=16G                 # memory
 #SBATCH --time=2-0                # A time limit of zero requests that no time limit be imposed. Acceptable time formats include "minutes", "minutes:seconds", "hours:minutes:seconds", "days-hours", "days-hours:minutes" and "days-hours:minutes:seconds".
 #SBATCH --job-name=vqa         
-#SBATCH --output=logs/%j.out
+#SBATCH --output=logs/%j
 #SBATCH --mail-user=er.li@mail.mcgill.ca
 #SBATCH --mail-type=ALL
 

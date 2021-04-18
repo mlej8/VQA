@@ -105,11 +105,16 @@ def train(
 
       trainer.fit(model=model, train_dataloader=dataloaders["train"])
     
-    test(PATH=trainer.checkpoint_callback.best_model_path, model=model, preprocess=preprocess)
+    best_checkpoint_path = trainer.checkpoint_callback.best_model_path
+
+    file_logger.info(f"Best checkpoint path {best_checkpoint_path} for {type(model).__name__}")
+    
+    test(PATH=best_checkpoint_path, model=model, preprocess=preprocess)
 
 def test(PATH, model, preprocess):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    
+    file_logger.info(f"Loading checkpoint at {PATH} for {type(model).__name__}")
+
     # load best model from checkpoint path
     model = model.__class__.load_from_checkpoint(
       checkpoint_path=PATH, 
@@ -125,7 +130,7 @@ def test(PATH, model, preprocess):
     test_loader = get_dataloaders(preprocess, test_batch_size, test_shuffle, test_num_workers, train=False, val=False, test=True)["test"]
 
     # generate result file name
-    result_file = os.path.join("Results", f"{type(model).__name__}_{versionType}{taskType}_{dataType}_results.json")
+    result_file = os.path.join("Results", f"{type(model).__name__}_{versionType}{taskType}_{dataType}_results_{datetime.now().strftime('%b-%d-%H-%M-%S')}.json")
     
     # list to store predictions
     results = []
@@ -146,5 +151,7 @@ def test(PATH, model, preprocess):
         
     file_logger.info(f"Done prediction!")
 
-    with open(resultFile, 'w') as outfile:
+    with open(result_file, 'w') as outfile:
         json.dump(results, outfile)
+
+    file_logger.info(f"Predictions stored at {result_file}!")
