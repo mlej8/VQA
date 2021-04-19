@@ -111,19 +111,22 @@ def train(
 
     file_logger.info(f"Best checkpoint path {best_checkpoint_path} for {type(model).__name__}")
     
-    test(PATH=best_checkpoint_path, model=model, preprocess=preprocess)
+    test(PATH=best_checkpoint_path, model_class=model.__class__, preprocess=preprocess)
 
-def test(PATH, model, preprocess):
+def test(PATH: str, model_class: pl.LightningModule, preprocess: transforms.Compose):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    file_logger.info(f"Loading checkpoint at {PATH} for {type(model).__name__}")
+    file_logger.info(f"Loading checkpoint at {PATH} for {model_class.__name__}")
 
     # load best model from checkpoint path
-    model = model.__class__.load_from_checkpoint(
+    model = model_class.load_from_checkpoint(
       checkpoint_path=PATH, 
       questions_vocab_size=VQA.questions_vocabulary.size, 
       answers_vocab_size=VQA.answers_vocabulary.size,  
       map_location=device
       )
+
+    # move model to correct device
+    model.to(device)
 
     # freeze all layers of the model and set it to evaluation mode
     model.freeze()
@@ -132,7 +135,7 @@ def test(PATH, model, preprocess):
     test_loader = get_dataloaders(preprocess, test_batch_size, test_shuffle, test_num_workers, train=False, val=False, test=True)["test"]
 
     # generate result file name
-    result_file = os.path.join("Results", f"{type(model).__name__}_{versionType}{taskType}_{dataType}_results_{PATH.split('/')[2]}.json")
+    result_file = os.path.join("Results", f"{model_class.__name__}_{versionType}{taskType}_{dataType}_results_{PATH.split('/')[2]}.json")
     
     # list to store predictions
     results = []
