@@ -160,3 +160,5 @@ def test(PATH: str, model_class: pl.LightningModule, preprocess: transforms.Comp
         json.dump(results, outfile)
 
     file_logger.info(f"Predictions stored at {result_file}!")
+
+    return result_file
