@@ -19,6 +19,8 @@ from params.test import *
 
 from dataloader import get_dataloaders
 
+from config import *
+
 from vqa import VQA
 
 import logging
@@ -66,16 +68,16 @@ def train(
     elif dataloaders.get("val") is not None:
       # early stoppping
       early_stopping_callback = EarlyStopping(
-        monitor='val_loss', # monitor validation loss
+        monitor='val_acc', # monitor validation accuracy
         verbose=True, # log early-stop events
         patience=patience,
         min_delta=0.00, # minimum change is 0
-        mode="min"
+        mode="max"
         )
 
       # update checkpoints based on validation loss by using ModelCheckpoint callback monitoring 'val_loss'
-      checkpoint_callback = ModelCheckpoint(monitor='val_loss',
-                                            mode="min",
+      checkpoint_callback = ModelCheckpoint(monitor='val_acc',
+                                            mode="max",
                                           save_top_k=top_k,
                                           save_last=True,
                                           dirpath=folder)
