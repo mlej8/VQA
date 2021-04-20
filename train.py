@@ -135,7 +135,7 @@ def test(PATH: str, model_class: pl.LightningModule, preprocess: transforms.Comp
     test_loader = get_dataloaders(preprocess, test_batch_size, test_shuffle, test_num_workers, train=False, val=False, test=True)["test"]
 
     # generate result file name
-    result_file = os.path.join("Results", f"{model_class.__name__}_{versionType}{taskType}_{dataType}_results_{PATH.split('/')[2]}.json")
+    result_file = os.path.join("Results", f"{model_class.__name__}_{versionType}{taskType}_{dataType}_results_{PATH.split('/')[-2]}.json")
     
     # list to store predictions
     results = []
