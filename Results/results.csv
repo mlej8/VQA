@@ -1,0 +1,7 @@
+SimpleBaselineVQA, Apr-19-00-33-53, [{"test-dev": {"yes/no": 71.52, "number": 33.87, "other": 34.98, "overall": 49.91}}]
+SimpleBaselineVQA, Apr-19-00-14-27, [{"test-dev": {"yes/no": 70.16, "number": 32.27, "other": 32.57, "overall": 48.02}}]
+SimpleBaselineVQA, Apr-18-16-34-58, [{"test-dev": {"yes/no": 0.0, "number": 0.03, "other": 0.13, "overall": 0.07}}]
+OriginalVQA, Apr-19-00-25-41, [{"test-dev": {"yes/no": 0.0, "number": 0.01, "other": 0.06, "overall": 0.03}}]
+OriginalVQA, Apr-19-00-14-25, [{"test-dev": {"yes/no": 0.02, "number": 0.31, "other": 0.04, "overall": 0.06}}]
+OriginalVQA, Apr-18-16-34-56, [{"test-dev": {"yes/no": 65.92, "number": 28.62, "other": 27.47, "overall": 43.44}}]
+SAN, Apr-17-21-32-59, [{"test-dev": {"yes/no": 0.0, "number": 0.02, "other": 0.3, "overall": 0.15}}]
