@@ -7,6 +7,7 @@ from config import *
 from simple_vqa_baseline import SimpleBaselineVQA
 from vqa_cnn_lstm import OriginalVQA
 from san import SAN
+from simple_san import SimpleSAN
 
 # pytorch
 import torch
@@ -34,9 +35,11 @@ if __name__ == '__main__':
         PATH = PATH.strip()
         model = PATH.split("/")[1]
         if model == "SimpleBaselineVQA":
-            result_path = test(PATH=PATH,model_class=SimpleBaselineVQA,preprocess=simple_preprocess)
+            result_path = test(PATH=PATH, model_class=SimpleBaselineVQA, preprocess=simple_preprocess)
         elif model == "SAN":
-            result_path = test(PATH=PATH,model_class=SAN,preprocess=san_preprocess)
+            result_path = test(PATH=PATH, model_class=SAN, preprocess=san_preprocess)
         elif model == "OriginalVQA":
-            result_path = test(PATH=PATH,model_class=OriginalVQA,preprocess=original_preprocess)
+            result_path = test(PATH=PATH, model_class=OriginalVQA, preprocess=original_preprocess)
+        elif model == "SimpleSAN":
+            result_path = test(PATH=PATH, model_class=SimpleSAN, preprocess=san_preprocess)
         logger.info(f"Done generating results for {PATH} {model} at {result_path}")
