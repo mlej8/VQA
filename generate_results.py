@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 if __name__ == '__main__':
     # NOTE: include path to checkpoint of models for which we want to generate results
     paths = [
-        "models/SAN/Apr-19-22-41-05/epoch=6-step=97075.ckpt"
+        "models/SAN/Apr-19-22-43-15/epoch=7-step=110943.ckpt"
     ]
 
     for PATH in reversed(paths): 
