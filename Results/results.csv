@@ -12,4 +12,5 @@ OriginalVQA, Apr-17-23-08-11, [{"test-dev": {"yes/no": 2.05, "number": 0.0, "oth
 OriginalVQA, Apr-17-23-03-24, [{"test-dev": {"yes/no": 0.0, "number": 0.12, "other": 0.18, "overall": 0.1}}]
 OriginalVQA, Apr-17-21-42-53, [{"test-dev": {"yes/no": 67.17, "number": 28.76, "other": 28.97, "overall": 44.68}}]
 OriginalVQA, project, [{"test-dev": {"yes/no": 47.75, "number": 0.27, "other": 3.71, "overall": 21.46}}]
-SAN, Apr-17-21-32-59, [{"test-dev": {"yes/no": 0.0, "number": 0.02, "other": 0.3, "overall": 0.15}}] 
+SAN, Apr-19-22-43-15, [{"test-dev": {"yes/no": 65.67, "number": 27.71, "other": 17.75, "overall": 38.62}}, {"test-standard": {"yes/no": 65.84, "number": 27.41, "other": 17.98, "overall": 38.86}}]
+SAN, Apr-17-21-32-59, [{"test-dev": {"yes/no": 0.0, "number": 0.02, "other": 0.3, "overall": 0.15}}]
