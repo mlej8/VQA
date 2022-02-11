@@ -1,0 +1,41 @@
+Word Embeddings:
+    ☐ Using BERT to have contextual word embeddings https://towardsdatascience.com/nlp-extract-contextualized-word-embeddings-from-bert-keras-tf-67ef29f60a7b
+    ☐ Using Glove? https://medium.com/@martinpella/how-to-use-pre-trained-word-embeddings-in-pytorch-71ca59249f76
+    ☐ Understand CBOW and Skip-Gram for word embeddings: https://www.analyticsvidhya.com/blog/2017/06/word-embeddings-count-word2veec/
+    ☐ Pretrained word embeddings: https://www.analyticsvidhya.com/blog/2020/03/pretrained-word-embeddings-nlp/
+    ☐ https://towardsdatascience.com/understanding-nlp-word-embeddings-text-vectorization-1a23744f7223#:~:text=Word%20Embeddings%20or%20Word%20vectorization,into%20numbers%20are%20called%20Vectorization.&text=Natural%20language%20processing.
+    ☐ https://radiant-brushlands-42789.herokuapp.com/towardsdatascience.com/the-magic-behind-embedding-models-part-1-974d539f21fd
+    ☐ https://towardsdatascience.com/introduction-to-word-embedding-and-word2vec-652d0c2060fa
+    ☐ https://www.youtube.com/watch?v=aRqn8t1hLxs
+    
+
+Evaluation Script:
+    ☐ evaluation script
+    ☐ Write a script to combine train and val datasets
+    ☐ find the best parameters based on val set, then train on train + val and predict on testing and submit to leaderboard
+    ☐ add val_acc and train_acc in the training and validation steps 
+    ☐ Find a way to output answer in the format precised here: https://visualqa.org/evaluation.html
+    ☐ See basic_vqa to get val_acc and train_acc
+
+Logging:
+    ☐ get comet logs to figure out which is better between concat and mul
+
+VQA Tools:
+    ☐ https://github.com/GT-Vision-Lab/VQA
+
+Simple Baseline VQA:
+    ☐ https://github.com/zhoubolei/VQAbaseline
+
+Original VQA GitHub:
+    ☐ https://github.com/mlej8/basic_vqa
+    ☐ https://github.com/GT-Vision-Lab/VQA_LSTM_CNN
+
+Stacked Attention Networks:
+    ☐ SAN: https://www.cv-foundation.org/openaccess/content_cvpr_2016/papers/Yang_Stacked_Attention_Networks_CVPR_2016_paper.pdf
+    ☐ https://github.com/Shivanshu-Gupta/Visual-Question-Answering/blob/master/san.py
+    ☐ Attention is all you need: https://www.youtube.com/watch?v=iDulhoQ2pro
+    ☐ Attention Model: https://www.youtube.com/watch?v=quoGRI-1l0A
+
+Strong Baseline for VQA:
+    ☐ Show, Ask, Attend, and Answer: A Strong Baseline For Visual Question Answering
+        ☐ https://github.com/Cyanogenoid/pytorch-vqa

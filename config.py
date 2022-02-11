@@ -1,9 +1,9 @@
 import os
 
 # setting the seed for reproducability (it is important to set seed when using DPP mode)
-from pytorch_lightning.utilities.seed import seed_everything
-# setting the seed for reproducability (it is important to set seed when using DPP mode)
-seed_everything(7)
+import torch
+torch.manual_seed(0)
+
 
 # configuration variables for VQA task
 dataDir		        = 'datasets'
