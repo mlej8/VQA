@@ -5,7 +5,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import pytorch_lightning as pl
 
-from pretrained import initialize_model
 from datetime import datetime
 
 from utils import weights_init

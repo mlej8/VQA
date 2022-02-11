@@ -19,6 +19,8 @@ from params.test import *
 
 from dataloader import get_dataloaders
 
+from config import *
+
 from vqa import VQA
 
 import logging
@@ -66,16 +68,16 @@ def train(
     elif dataloaders.get("val") is not None:
       # early stoppping
       early_stopping_callback = EarlyStopping(
-        monitor='val_loss', # monitor validation loss
+        monitor='val_acc', # monitor validation accuracy
         verbose=True, # log early-stop events
         patience=patience,
         min_delta=0.00, # minimum change is 0
-        mode="min"
+        mode="max"
         )
 
       # update checkpoints based on validation loss by using ModelCheckpoint callback monitoring 'val_loss'
-      checkpoint_callback = ModelCheckpoint(monitor='val_loss',
-                                            mode="min",
+      checkpoint_callback = ModelCheckpoint(monitor='val_acc',
+                                            mode="max",
                                           save_top_k=top_k,
                                           save_last=True,
                                           dirpath=folder)
@@ -105,18 +107,26 @@ def train(
 
       trainer.fit(model=model, train_dataloader=dataloaders["train"])
     
-    test(PATH=trainer.checkpoint_callback.best_model_path, model=model, preprocess=preprocess)
+    best_checkpoint_path = trainer.checkpoint_callback.best_model_path
 
-def test(PATH, model, preprocess):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    file_logger.info(f"Best checkpoint path {best_checkpoint_path} for {type(model).__name__}")
     
+    test(PATH=best_checkpoint_path, model_class=model.__class__, preprocess=preprocess)
+
+def test(PATH: str, model_class: pl.LightningModule, preprocess: transforms.Compose):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    file_logger.info(f"Loading checkpoint at {PATH} for {model_class.__name__}")
+
     # load best model from checkpoint path
-    model = model.__class__.load_from_checkpoint(
+    model = model_class.load_from_checkpoint(
       checkpoint_path=PATH, 
       questions_vocab_size=VQA.questions_vocabulary.size, 
       answers_vocab_size=VQA.answers_vocabulary.size,  
       map_location=device
       )
+
+    # move model to correct device
+    model.to(device)
 
     # freeze all layers of the model and set it to evaluation mode
     model.freeze()
@@ -125,7 +135,7 @@ def test(PATH, model, preprocess):
     test_loader = get_dataloaders(preprocess, test_batch_size, test_shuffle, test_num_workers, train=False, val=False, test=True)["test"]
 
     # generate result file name
-    result_file = os.path.join("Results", f"{type(model).__name__}_{versionType}{taskType}_{dataType}_results.json")
+    result_file = os.path.join("Results", f"{model_class.__name__}_{versionType}{taskType}_{dataType}_results_{PATH.split('/')[-2]}.json")
     
     # list to store predictions
     results = []
@@ -146,5 +156,9 @@ def test(PATH, model, preprocess):
         
     file_logger.info(f"Done prediction!")
 
-    with open(resultFile, 'w') as outfile:
+    with open(result_file, 'w') as outfile:
         json.dump(results, outfile)
+
+    file_logger.info(f"Predictions stored at {result_file}!")
+
+    return result_file

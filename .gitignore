@@ -141,3 +141,5 @@ vqa-env/
 keys/
 *.ckpt
 *.zip
+logs/
+models/
